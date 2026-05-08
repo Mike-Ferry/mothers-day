@@ -516,6 +516,25 @@
     .prize-title   { font-size: 17px; font-weight: 900; color: #FFFFFF; line-height: 1.25; margin: 10px 0 2px; text-transform: uppercase; letter-spacing: 0.8px; }
     .prize-price   { font-size: 36px; font-weight: 900; color: #CC0000; margin: 4px 0 1px; line-height: 1; }
     .prize-original { font-size: 14px; color: #888888; text-decoration: line-through; margin-bottom: 12px; }
+
+    /* Freebie bonus highlight box */
+    .prize-freebie-wrap {
+      background: linear-gradient(135deg, #0f5c0f, #166b16);
+      border: 2px solid #22c55e;
+      border-radius: 14px;
+      padding: 14px 16px;
+      margin: 12px 0 14px;
+      text-align: center;
+    }
+    .prize-freebie-label {
+      font-size: 10px; font-weight: 900; letter-spacing: 2px;
+      text-transform: uppercase; color: #86efac; margin-bottom: 6px;
+      display: block;
+    }
+    .prize-freebie-name {
+      font-size: 18px; font-weight: 900; color: #FFFFFF;
+      line-height: 1.25; text-transform: uppercase; letter-spacing: 0.5px;
+    }
     .prize-urgency {
       background: #1A1A1A; border: 1.5px solid #CC0000; border-radius: 10px;
       padding: 9px 13px; font-size: 12px; font-weight: 700; color: #FFFFFF; margin: 10px 0; line-height: 1.4;
@@ -1416,11 +1435,17 @@
 <div id="prize-overlay" class="hidden">
   <div id="confetti-container"></div>
   <div id="prize-card">
-    <div class="prize-tag" id="prize-tag-text">🏆 CONGRATULATIONS — YOU WON! 🏆</div>
+    <div class="prize-tag">🏆 CONGRATULATIONS — YOU WON! 🏆</div>
     <div class="prize-jackpot" id="prize-event-name">West Coast Superstar Retreat</div>
     <div class="prize-title" id="prize-ticket-line">$300 Ticket — Included</div>
     <div class="prize-price">$300 Value</div>
-    <div class="prize-original" id="prize-bonus-line">+ Backstage VIP Tour of the Event</div>
+
+    <!-- Freebie bonus box -->
+    <div class="prize-freebie-wrap">
+      <span class="prize-freebie-label">🎁 Your Free Bonus</span>
+      <div class="prize-freebie-name" id="prize-bonus-line">Backstage VIP Tour of the Event</div>
+    </div>
+
     <div class="prize-urgency">⚡ Offer expires Monday, May 11th at 8am — claim now!</div>
     <div class="prize-body" id="prize-body-text">You picked every flower and won a real prize! Tap below to claim your spot before it expires.</div>
     <a id="claim-btn" href="#" target="_blank" rel="noopener noreferrer" onclick="markPlayed();">
@@ -1631,7 +1656,7 @@
       // Prize A: West Coast Superstar Retreat + Backstage VIP Tour
       document.getElementById('prize-event-name').textContent  = 'West Coast Superstar Retreat';
       document.getElementById('prize-ticket-line').textContent = '$300 Ticket — Included';
-      document.getElementById('prize-bonus-line').textContent  = '+ Backstage VIP Tour of the Event';
+      document.getElementById('prize-bonus-line').textContent  = 'Backstage VIP Tour of the Event';
       document.getElementById('prize-body-text').textContent   = 'You picked every flower and won a $300 ticket to the West Coast Superstar Retreat — plus an exclusive Backstage VIP Tour of the event. Tap below to claim before it expires!';
       document.getElementById('claim-btn').textContent         = 'CLAIM YOUR VIP RETREAT PRIZE →';
       document.getElementById('claim-btn').href                = 'https://mikeferry-45810950.hs-sites.com/hs/payments/2jjcdndcd?referrer=PAYMENT_LINK';
@@ -1639,7 +1664,7 @@
       // Prize B: West Coast Superstar Review + Virtual Prospecting Clinic
       document.getElementById('prize-event-name').textContent  = 'West Coast Superstar Review';
       document.getElementById('prize-ticket-line').textContent = '$300 Ticket — Included';
-      document.getElementById('prize-bonus-line').textContent  = '+ Virtual Prospecting Clinic Ticket';
+      document.getElementById('prize-bonus-line').textContent  = 'Virtual Prospecting Clinic Ticket';
       document.getElementById('prize-body-text').textContent   = 'You picked every flower and won a $300 ticket to the West Coast Superstar Review — plus a ticket to an exclusive Virtual Prospecting Clinic. Tap below to claim before it expires!';
       document.getElementById('claim-btn').textContent         = 'CLAIM YOUR SUPERSTAR REVIEW PRIZE →';
       document.getElementById('claim-btn').href                = 'https://mikeferry-45810950.hs-sites.com/hs/payments/dSTdqXpf?referrer=PAYMENT_LINK';
