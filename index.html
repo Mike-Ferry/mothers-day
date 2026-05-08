@@ -1,0 +1,1685 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#5BC8F5">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="description" content="Tap to hunt for flowers and win a chance at Superstar Retreat tickets!">
+  <title>Mothers Day Bouquet Hunt – Win Superstar Retreat Tickets</title>
+  <style>
+    /* ====================================================
+       RESET & BASE
+    ==================================================== */
+    *, *::before, *::after {
+      box-sizing: border-box; margin: 0; padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      -webkit-touch-callout: none;
+      -webkit-user-select: none; user-select: none;
+    }
+    html, body {
+      width: 100%; height: 100%; overflow: hidden;
+      background: #0d1b2a;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+    }
+
+    /* ====================================================
+       GAME WRAPPER + SCENE
+    ==================================================== */
+    #game-wrapper {
+      display: flex; align-items: center; justify-content: center;
+      width: 100vw; height: 100vh;
+      overflow: hidden;
+    }
+
+    /* Fixed 9:16 design canvas — JS scales it to fill any screen */
+    #scene {
+      position: relative;
+      width: 480px;
+      height: 853px;
+      flex-shrink: 0;
+      transform-origin: center center;
+      overflow: hidden;
+      background: linear-gradient(
+        to bottom,
+        #5BC8F5 0%, #87CEEB 28%, #A8DFFF 44%,
+        #C5EFBF 50%, #79C44E 54%, #5CAE35 62%,
+        #4A9A28 72%, #3D8520 100%
+      );
+    }
+
+    /* ====================================================
+       CLOUDS
+    ==================================================== */
+    .cloud {
+      position: absolute;
+      background: rgba(255,255,255,0.92);
+      border-radius: 50px; pointer-events: none;
+    }
+    .cloud::before, .cloud::after {
+      content: ''; position: absolute;
+      background: inherit; border-radius: 50%;
+    }
+    .cloud-1 { width: 80px; height: 26px; top: 10%; left: 1%; animation: cloudDrift 18s ease-in-out infinite; }
+    .cloud-1::before { width: 38px; height: 38px; top: -20px; left: 10px; }
+    .cloud-1::after  { width: 28px; height: 28px; top: -14px; left: 38px; }
+
+    .cloud-2 { width: 104px; height: 30px; top: 9%; right: 0%; animation: cloudDrift 22s ease-in-out infinite reverse; }
+    .cloud-2::before { width: 48px; height: 48px; top: -25px; left: 16px; }
+    .cloud-2::after  { width: 34px; height: 34px; top: -17px; left: 55px; }
+
+    .cloud-3 { width: 64px; height: 20px; top: 29%; left: 50%; animation: cloudDrift 15s ease-in-out infinite; }
+    .cloud-3::before { width: 28px; height: 28px; top: -14px; left: 8px; }
+    .cloud-3::after  { width: 22px; height: 22px; top: -11px; left: 28px; }
+
+    .cloud-4 { width: 72px; height: 22px; top: 32%; left: 4%; animation: cloudDrift 20s ease-in-out infinite reverse; }
+    .cloud-4::before { width: 32px; height: 32px; top: -17px; left: 9px; }
+    .cloud-4::after  { width: 24px; height: 24px; top: -12px; left: 34px; }
+
+    .cloud-5 { width: 90px; height: 26px; top: 27%; left: 62%; animation: cloudDrift 25s ease-in-out infinite; }
+    .cloud-5::before { width: 40px; height: 40px; top: -21px; left: 12px; }
+    .cloud-5::after  { width: 30px; height: 30px; top: -15px; left: 46px; }
+
+    .cloud-6 { width: 56px; height: 18px; top: 35%; right: 5%; animation: cloudDrift 17s ease-in-out infinite reverse; }
+    .cloud-6::before { width: 24px; height: 24px; top: -12px; left: 7px; }
+    .cloud-6::after  { width: 18px; height: 18px; top: -9px;  left: 25px; }
+
+    @keyframes cloudDrift {
+      0%, 100% { transform: translateX(0); }
+      50%       { transform: translateX(12px); }
+    }
+
+    /* ====================================================
+       TREE  (upper-left) — trunk height uses 43vh so it
+       always reaches the ground at the ~55% gradient line
+    ==================================================== */
+    #tree {
+      position: absolute; left: 1%; top: 28%;
+      pointer-events: none;
+    }
+    #tree-right {
+      position: absolute; right: 1%; top: 26%;
+      pointer-events: none;
+      transform: scaleX(-1); /* mirror the left tree */
+    }
+    #tree-middle {
+      position: absolute; left: 50%; top: 34%;
+      transform: translateX(-50%);
+      pointer-events: none;
+    }
+
+    .tree-trunk {
+      position: absolute;
+      width: 18px;
+      height: min(calc(22vh - 30px), 140px);
+      min-height: 70px;
+      background: linear-gradient(to right, #7A4F2A, #A0724A, #7A4F2A);
+      border-radius: 4px 4px 3px 3px;
+      left: 34px; top: 62px;
+    }
+
+    /* canopy layers — deepest to shallowest */
+    .tree-canopy-back {
+      position: absolute; width: 72px; height: 62px;
+      background: radial-gradient(ellipse at 45% 55%, #3B8C24, #2D6B1A);
+      border-radius: 50% 45% 50% 48%;
+      top: 22px; left: 4px;
+      box-shadow: inset -5px -5px 14px rgba(0,0,0,0.18);
+    }
+    .tree-canopy-mid {
+      position: absolute; width: 82px; height: 70px;
+      background: radial-gradient(ellipse at 42% 48%, #4CA030, #368C1E);
+      border-radius: 48% 50% 45% 50%;
+      top: 10px; left: 0;
+      box-shadow: inset -4px -4px 12px rgba(0,0,0,0.14);
+    }
+    .tree-canopy-front {
+      position: absolute; width: 66px; height: 62px;
+      background: radial-gradient(ellipse at 45% 42%, #5CBF3A, #42A020);
+      border-radius: 50% 50% 42% 46%;
+      top: 0; left: 14px;
+      box-shadow: inset -3px -3px 10px rgba(0,0,0,0.1);
+    }
+    /* This foreground blob sits OVER egg-1 (z-index 12) making it look hidden in leaves */
+    .tree-canopy-cover {
+      position: absolute; width: 46px; height: 42px;
+      background: radial-gradient(ellipse at 48% 52%, #4EB830, #38900E);
+      border-radius: 52% 48% 50% 50%;
+      top: 14px; left: 0;
+      z-index: 12; pointer-events: none;
+    }
+
+    /* ====================================================
+       BUSHES
+    ==================================================== */
+    /* Right bush — covers bottom half of egg-2 */
+    #bush-right {
+      position: absolute; right: 0; top: 50%;
+      width: 145px; height: 80px;
+      pointer-events: none;
+    }
+    .bush-blob {
+      position: absolute;
+      border-radius: 50%;
+      box-shadow: inset -3px -3px 8px rgba(0,0,0,0.12);
+    }
+    /* back blobs (low z) */
+    .bush-blob-1 { width: 72px; height: 64px; left: 0;  top: 14px; background: radial-gradient(ellipse at 45% 50%, #4AB628, #328018); }
+    .bush-blob-2 { width: 65px; height: 58px; left: 40px; top: 4px;  background: radial-gradient(ellipse at 42% 42%, #52C030, #3A9020); }
+    .bush-blob-3 { width: 58px; height: 52px; left: 80px; top: 18px; background: radial-gradient(ellipse at 48% 48%, #4CB02A, #348018); }
+    /* front cover blob (above egg-2) */
+    .bush-blob-cover {
+      position: absolute; width: 64px; height: 46px; right: 2px; top: 30px;
+      background: radial-gradient(ellipse at 42% 52%, #58C835, #3EA020);
+      border-radius: 50%;
+      z-index: 12; pointer-events: none;
+    }
+
+    /* Left bush — decorative, lower left */
+    #bush-left {
+      position: absolute; left: 0; top: 54%;
+      width: 110px; height: 65px;
+      pointer-events: none;
+    }
+    .bl-blob-1 { position: absolute; width: 58px; height: 50px; left: 0;  top: 14px; background: radial-gradient(ellipse at 45% 50%, #4AB628, #328018); border-radius: 50%; }
+    .bl-blob-2 { position: absolute; width: 52px; height: 46px; left: 32px; top: 4px;  background: radial-gradient(ellipse at 42% 42%, #52C030, #3A9020); border-radius: 50%; }
+    .bl-blob-3 { position: absolute; width: 44px; height: 40px; left: 60px; top: 18px; background: radial-gradient(ellipse at 48% 48%, #4CB02A, #348018); border-radius: 50%; }
+
+    /* ====================================================
+       FLOWERS  (right lower area)
+    ==================================================== */
+    #flowers-right {
+      position: absolute; right: 2%; top: 54%;
+      pointer-events: none;
+    }
+    /* A "grass clump" that covers the bottom of egg-3 */
+    .flowers-cover {
+      position: absolute; right: 8%; top: 72%;
+      width: 0px !important; height: 0px !important;
+      background: none !important;
+      border-radius: 50% 50% 0 0;
+      z-index: 12; pointer-events: none;
+      display: none !important;
+      visibility: hidden !important;
+      opacity: 0 !important;
+    }
+
+    /* Center-left flowers — purely decorative */
+    #flowers-left {
+      position: absolute; left: 0%; top: 52%;
+      pointer-events: none;
+    }
+
+    /* Center flower cluster — mid-ground decorative */
+    #flowers-center {
+      position: absolute; left: 28%; top: 50%;
+      pointer-events: none;
+    }
+
+    /* Bottom flowers strip — decorative row across the ground */
+    #flowers-bottom {
+      position: absolute; left: 20%; top: 62%;
+      pointer-events: none;
+    }
+
+    /* Wide ground flower row */
+    #flowers-ground {
+      position: absolute; left: 0%; top: 66%;
+      pointer-events: none;
+    }
+
+
+
+    /* Center bush — hides bottom of egg-5 */
+    #bush-center {
+      position: absolute; left: 32%; top: 66%;
+      width: 135px; height: 72px;
+      pointer-events: none;
+    }
+    .bc-blob-1 { position: absolute; width: 64px; height: 56px; left: 0;  top: 14px; background: radial-gradient(ellipse at 45% 50%, #4AB628, #328018); border-radius: 50%; }
+    .bc-blob-2 { position: absolute; width: 58px; height: 52px; left: 38px; top: 4px;  background: radial-gradient(ellipse at 42% 42%, #52C030, #3A9020); border-radius: 50%; }
+    .bc-blob-3 { position: absolute; width: 52px; height: 46px; left: 76px; top: 20px; background: radial-gradient(ellipse at 48% 48%, #4CB02A, #348018); border-radius: 50%; }
+    .bc-blob-cover {
+      position: absolute; width: 60px; height: 44px; left: 22px; top: 28px;
+      background: radial-gradient(ellipse at 42% 52%, #58C835, #3EA020);
+      border-radius: 50%; z-index: 12; pointer-events: none;
+    }
+
+    /* Flower cover that hides bottom of egg-6 (z-index 12) */
+    .flowers-cover-6 {
+      position: absolute; left: 4.5%; top: 66.5%;
+      width: 0px !important; height: 0px !important;
+      background: none !important;
+      border-radius: 50%; z-index: 12; pointer-events: none;
+      display: none !important;
+      visibility: hidden !important;
+      opacity: 0 !important;
+    }
+
+    /* Extra mid-right flower cluster */
+    #flowers-mid-right {
+      position: absolute; right: 0; top: 56%;
+      pointer-events: none;
+    }
+    /* Extra mid-left dense flowers */
+    #flowers-dense-left {
+      position: absolute; left: 0; top: 58%;
+      pointer-events: none;
+    }
+    /* Low center strip */
+    #flowers-low-center {
+      position: absolute; left: 0; top: 72%;
+      pointer-events: none;
+    }
+
+    /* ====================================================
+       GRASS TUFTS covering egg-4's bottom half
+    ==================================================== */
+    .grass-cover-4 {
+      position: absolute;
+      left: 26%; top: 74%;    /* aligned over egg-4 */
+      width: 0px !important; height: 0px !important;
+      background: none !important;
+      border-radius: 50% 50% 0 0;
+      z-index: 12; pointer-events: none;
+      display: none !important;
+      visibility: hidden !important;
+      opacity: 0 !important;
+    }
+
+    
+
+    /* ====================================================
+       FLOWERS (Pickable) - SVG 8-PETAL DESIGN
+    ==================================================== */
+    .flower {
+      position: absolute;
+      width: 130px; height: 130px;
+      cursor: pointer; z-index: 13;
+      transition: transform 0.18s ease;
+      touch-action: manipulation;
+      filter: drop-shadow(0 3px 10px rgba(0, 0, 0, 0.3));
+    }
+    .flower:hover  { transform: scale(1.18) rotate(-5deg); }
+    .flower:active { transform: scale(1.08); }
+
+    /* Flower 1 – PINK – peeking from left bush */
+    #flower-1 {
+      left: 2%; top: 57%;
+    }
+    /* Flower 2 – BLUE – in right bush (bottom half hidden) */
+    #flower-2 {
+      right: 8%; top: 54%;
+    }
+    /* Flower 3 – YELLOW – in flowers (bottom half under grass clump) */
+    #flower-3 {
+      right: 10%; top: 66%;
+    }
+    /* Flower 4 – PURPLE – in grass (bottom half under grass tuft) */
+    #flower-4 {
+      left: 26%; top: 69%;
+    }
+    /* Flower 5 – TEAL – left side */
+    #flower-5 {
+      left: 12%; top: 62%;
+    }
+    /* Flower 6 – ORANGE – right center */
+    #flower-6 {
+      right: 18%; top: 70%;
+    }
+
+    /* ====================================================
+       POTTED PLANT DISPLAY
+    ==================================================== */
+    #pot-wrapper {
+      position: absolute; bottom: 6%; left: 50%;
+      transform: translateX(-50%);
+      z-index: 15; pointer-events: none;
+    }
+
+    #pot {
+      position: relative;
+      width: 120px;
+      height: 140px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: visible;
+    }
+
+    /* Picnic basket body */
+    #pot::before {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      width: 140px;
+      height: 95px;
+      background:
+        repeating-linear-gradient(45deg, #C9A976, #C9A976 2px, #D4B896 2px, #D4B896 4px),
+        repeating-linear-gradient(-45deg, #C9A976, #C9A976 2px, #B89860 2px, #B89860 4px),
+        linear-gradient(135deg, #D4B896 0%, #C9A976 50%, #B89860 100%);
+      background-blend-mode: overlay, multiply, normal;
+      border-radius: 8px;
+      box-shadow:
+        0 10px 25px rgba(0, 0, 0, 0.25),
+        inset -2px -2px 6px rgba(0, 0, 0, 0.15),
+        inset 2px 2px 6px rgba(255, 255, 255, 0.15);
+      border: 2px solid #8B7355;
+      z-index: 1;
+    }
+
+    /* Basket rim/top edge with wicker texture */
+    #pot::after {
+      content: '';
+      position: absolute;
+      bottom: 93px;
+      width: 144px;
+      height: 5px;
+      background:
+        repeating-linear-gradient(90deg, #C9A976 0px, #C9A976 3px, #B89860 3px, #B89860 6px),
+        linear-gradient(to bottom, #D4B896, #C9A976);
+      background-blend-mode: overlay, normal;
+      border-radius: 3px;
+      box-shadow:
+        inset -1px 1px 3px rgba(0, 0, 0, 0.2),
+        inset 1px -1px 3px rgba(255, 255, 255, 0.1);
+      z-index: 2;
+    }
+
+    #pot-flowers {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      z-index: 10;
+      overflow: visible;
+      display: block;
+      pointer-events: none;
+    }
+
+    .pot-flower {
+      position: absolute;
+      width: 50px;
+      height: 90px;
+      filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.15));
+      pointer-events: none;
+      display: block !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+      z-index: 50 !important;
+    }
+
+    #pot-count {
+      position: absolute; bottom: -40px; left: 50%;
+      transform: translateX(-50%);
+      background: #EC4899; color: white;
+      font-size: 14px; font-weight: 900;
+      padding: 8px 16px; border-radius: 20px;
+      box-shadow: 0 4px 12px rgba(236, 72, 153, 0.4);
+      opacity: 0;
+      transition: opacity 0.3s, transform 0.3s;
+      white-space: nowrap;
+      pointer-events: none;
+      z-index: 20;
+    }
+    #pot-count.show { opacity: 1; }
+
+    @keyframes potCelebration {
+      0% { transform: translateX(-50%) scale(1) rotate(0deg); }
+      20% { transform: translateX(-50%) scale(1.12) rotate(-4deg); }
+      40% { transform: translateX(-50%) scale(1.16) rotate(4deg); }
+      60% { transform: translateX(-50%) scale(1.13) rotate(-2deg); }
+      80% { transform: translateX(-50%) scale(1.08) rotate(1deg); }
+      100% { transform: translateX(-50%) scale(1) rotate(0deg); }
+    }
+    @keyframes potGlow {
+      0%,100% { filter: drop-shadow(0 0 8px rgba(236, 72, 153, 0.3)); }
+      50% { filter: drop-shadow(0 0 18px rgba(236, 72, 153, 0.7)) drop-shadow(0 0 8px rgba(255, 182, 193, 0.5)); }
+    }
+    .pot-celebration { animation: potCelebration 1s cubic-bezier(0.36, 0.07, 0.19, 0.97) forwards, potGlow 1s ease-in-out; }
+
+    /* ====================================================
+       GAME HEADLINE BANNER
+    ==================================================== */
+    #game-headline {
+      position: absolute; top: 0; left: 0; right: 0;
+      background: linear-gradient(135deg, #CC0000 0%, #A00000 100%);
+      display: flex; align-items: center; justify-content: center;
+      padding: 9px 16px 8px;
+      z-index: 30; pointer-events: none;
+      border-bottom: 2px solid rgba(255,255,255,0.15);
+      box-shadow: 0 3px 12px rgba(0,0,0,0.25);
+    }
+    #headline-text {
+      color: #FFFFFF;
+      font-size: 13px; font-weight: 900;
+      letter-spacing: 1.2px; text-transform: uppercase;
+      text-shadow: 0 1px 4px rgba(0,0,0,0.35);
+      white-space: nowrap;
+    }
+
+    /* Logo floating centered above the instructions pill */
+    #mfo-logo {
+      position: absolute; top: 52px; left: 50%;
+      transform: translateX(-50%);
+      height: 120px; width: auto;
+      filter: brightness(0) invert(1) drop-shadow(0 2px 8px rgba(0,0,0,0.35));
+      z-index: 28; pointer-events: none;
+    }
+
+    /* ====================================================
+       INSTRUCTIONS BANNER
+    ==================================================== */
+    #game-instructions {
+      position: absolute; top: 21%; left: 50%;
+      transform: translateX(-50%);
+      background: rgba(255,255,255,0.88);
+      backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+      padding: 7px 18px; border-radius: 22px;
+      font-size: 13px; font-weight: 700; color: #1D5C0A;
+      white-space: nowrap; box-shadow: 0 2px 10px rgba(0,0,0,0.12);
+      z-index: 25; pointer-events: none; transition: all 0.4s ease;
+    }
+
+    /* ====================================================
+       PRIZE CARD MODAL
+    ==================================================== */
+    #prize-overlay {
+      position: absolute; inset: 0;   /* absolute so it scales with the scene */
+      background: rgba(10,10,20,0.72); z-index: 1000;
+      display: flex; align-items: center; justify-content: center;
+      animation: overlayIn 0.35s ease;
+    }
+    #prize-overlay.hidden { display: none; }
+    @keyframes overlayIn { from { opacity: 0; } to { opacity: 1; } }
+
+    #prize-card {
+      position: relative; background: #111111;
+      border-radius: 22px; padding: 26px 28px 22px;
+      width: 92%; max-width: 420px; max-height: 90%;
+      overflow-y: auto; -webkit-overflow-scrolling: touch;
+      z-index: 1001;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.6), 0 0 0 2px #CC0000;
+      animation: cardPop 0.55s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      text-align: center;
+    }
+    @keyframes cardPop {
+      0%   { transform: scale(0.25) translateY(60px); opacity: 0; }
+      100% { transform: scale(1) translateY(0); opacity: 1; }
+    }
+    .prize-tag {
+      display: inline-block; background: #CC0000; border: 2px solid #FF3333;
+      color: #FFFFFF; font-size: 11px; font-weight: 800; letter-spacing: 0.4px;
+      padding: 5px 13px; border-radius: 30px; text-transform: uppercase; margin-bottom: 10px;
+    }
+    .prize-jackpot { font-size: 34px; font-weight: 900; color: #FFFFFF; margin: 6px 0 4px; line-height: 1.2; text-transform: uppercase; letter-spacing: 1px; }
+    .prize-title   { font-size: 17px; font-weight: 900; color: #FFFFFF; line-height: 1.25; margin: 10px 0 2px; text-transform: uppercase; letter-spacing: 0.8px; }
+    .prize-price   { font-size: 36px; font-weight: 900; color: #CC0000; margin: 4px 0 1px; line-height: 1; }
+    .prize-original { font-size: 14px; color: #888888; text-decoration: line-through; margin-bottom: 12px; }
+    .prize-urgency {
+      background: #1A1A1A; border: 1.5px solid #CC0000; border-radius: 10px;
+      padding: 9px 13px; font-size: 12px; font-weight: 700; color: #FFFFFF; margin: 10px 0; line-height: 1.4;
+    }
+    .prize-body    { font-size: 13.5px; color: #CCCCCC; line-height: 1.55; margin: 10px 0 14px; }
+    #claim-btn {
+      display: block; width: 100%; padding: 17px 16px;
+      background: #CC0000;
+      color: white; font-size: 14px; font-weight: 900;
+      text-decoration: none; border-radius: 13px; margin-bottom: 10px;
+      box-shadow: 0 5px 18px rgba(204,0,0,0.5);
+      text-transform: uppercase; letter-spacing: 0.6px;
+      transition: transform 0.2s, box-shadow 0.2s;
+      border: none; cursor: pointer; -webkit-appearance: none; line-height: 1.2;
+    }
+    #claim-btn:hover, #claim-btn:active { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(204,0,0,0.65); background: #AA0000; }
+    .prize-fine-print { font-size: 11px; color: #888888; line-height: 1.6; }
+
+    /* ====================================================
+       CONFETTI
+    ==================================================== */
+    #confetti-container { position: absolute; inset: 0; pointer-events: none; z-index: 999; overflow: hidden; }
+    .confetti-piece { position: absolute; top: -24px; animation: confettiFall linear forwards; }
+    @keyframes confettiFall {
+      0%   { transform: translateY(0) rotate(0deg) scaleX(1);   opacity: 1; }
+      60%  { opacity: 1; }
+      100% { transform: translateY(115vh) rotate(720deg) scaleX(1); opacity: 0; }
+    }
+
+    /* ====================================================
+       ALREADY PLAYED SCREEN
+    ==================================================== */
+    #already-played {
+      position: fixed; inset: 0;
+      background: linear-gradient(145deg, #5BC8F5 0%, #87CEEB 40%, #B5E8A5 100%);
+      display: flex; align-items: center; justify-content: center; z-index: 2000;
+    }
+    #already-played.hidden { display: none; }
+    .ap-card {
+      background: white; border-radius: 22px; padding: 44px 30px;
+      max-width: 310px; width: 88%; text-align: center;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+    }
+    .ap-card .ap-emoji { font-size: 60px; display: block; margin-bottom: 18px; }
+    .ap-card h2 { font-size: 23px; font-weight: 900; color: #111827; margin-bottom: 12px; }
+    .ap-card p  { font-size: 14px; color: #6B7280; line-height: 1.65; margin-bottom: 22px; }
+    .ap-link {
+      display: inline-block; background: linear-gradient(135deg, #4F86C6, #2563EB);
+      color: white; font-size: 14px; font-weight: 700;
+      padding: 13px 26px; border-radius: 11px; text-decoration: none;
+      transition: transform 0.2s, box-shadow 0.2s;
+      box-shadow: 0 4px 14px rgba(37,99,235,0.35);
+    }
+    .ap-link:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(37,99,235,0.45); }
+
+    /* ====================================================
+       LOCKED / EXPIRED SCREEN
+    ==================================================== */
+    #game-locked {
+      position: fixed; inset: 0;
+      background: linear-gradient(145deg, #1a1a2e 0%, #16213e 60%, #0f3460 100%);
+      display: flex; align-items: center; justify-content: center; z-index: 3000;
+    }
+    #game-locked.hidden { display: none; }
+    .lock-card {
+      background: #111827; border-radius: 24px; padding: 48px 32px;
+      max-width: 320px; width: 88%; text-align: center;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.5), 0 0 0 2px #CC0000;
+    }
+    .lock-card .lock-emoji { font-size: 64px; display: block; margin-bottom: 20px; }
+    .lock-card h2 { font-size: 24px; font-weight: 900; color: #FFFFFF; margin-bottom: 12px; letter-spacing: 0.5px; text-transform: uppercase; }
+    .lock-card p  { font-size: 14px; color: #9CA3AF; line-height: 1.7; margin-bottom: 24px; }
+    .lock-link {
+      display: inline-block; background: #CC0000;
+      color: white; font-size: 14px; font-weight: 800;
+      padding: 14px 28px; border-radius: 12px; text-decoration: none;
+      transition: transform 0.2s, background 0.2s;
+      box-shadow: 0 4px 16px rgba(204,0,0,0.4); text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .lock-link:hover { transform: translateY(-2px); background: #AA0000; }
+
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+<!-- GAME LOCKED -->
+<div id="game-locked" class="hidden">
+  <div class="lock-card">
+    <span class="lock-emoji">🔒</span>
+    <h2>This Hunt Has Ended</h2>
+    <p>The Mother's Day Bouquet Hunt closed on May 11th at 8am.<br><br>Stay tuned for more events from the Mike Ferry Organization!</p>
+    <a href="https://mikeferry.com" class="lock-link">Visit MFO →</a>
+  </div>
+</div>
+
+<!-- ALREADY PLAYED -->
+<div id="already-played" class="hidden">
+  <div class="ap-card">
+    <span class="ap-emoji">💐</span>
+    <h2>Thanks for playing!</h2>
+    <p>You've already built your beautiful bouquet!<br>Check your email for the winning details.</p>
+    <a href="https://mikeferry.com" class="ap-link">Return to MFO →</a>
+  </div>
+</div>
+
+<!-- GAME -->
+<div id="game-wrapper">
+  <div id="scene">
+
+    <div id="game-headline">
+      <span id="headline-text">🌸 Build a Bouquet — Win a Prize! 🌸</span>
+    </div>
+    <img src="White%20Logo.png" alt="Mike Ferry" id="mfo-logo">
+
+    <div id="game-instructions">🌸 Pick all 6 flowers to build a bouquet for mom!</div>
+
+    <!-- Clouds -->
+    <div class="cloud cloud-1"></div>
+    <div class="cloud cloud-2"></div>
+    <div class="cloud cloud-3"></div>
+    <div class="cloud cloud-4"></div>
+    <div class="cloud cloud-5"></div>
+    <div class="cloud cloud-6"></div>
+
+    <!-- Tree (upper left) — canopy layers + cover blob hides egg-1 bottom half -->
+    <div id="tree">
+      <div class="tree-canopy-back"></div>
+      <div class="tree-canopy-mid"></div>
+      <div class="tree-canopy-front"></div>
+      <div class="tree-canopy-cover"></div><!-- sits OVER egg-1 -->
+      <div class="tree-trunk"></div>
+    </div>
+
+    <!-- Tree (upper right) — mirrored decorative tree -->
+    <div id="tree-right">
+      <div class="tree-canopy-back"></div>
+      <div class="tree-canopy-mid"></div>
+      <div class="tree-canopy-front"></div>
+      <div class="tree-trunk"></div>
+    </div>
+
+    <!-- Tree (middle) — center decorative tree -->
+    <div id="tree-middle">
+      <div class="tree-canopy-back"></div>
+      <div class="tree-canopy-mid"></div>
+      <div class="tree-canopy-front"></div>
+      <div class="tree-trunk"></div>
+    </div>
+
+    <!-- Right bush — front cover blob hides egg-2 bottom half -->
+    <div id="bush-right">
+      <div class="bush-blob bush-blob-1"></div>
+      <div class="bush-blob bush-blob-2"></div>
+      <div class="bush-blob bush-blob-3"></div>
+      <div class="bush-blob-cover"></div><!-- sits OVER egg-2 -->
+    </div>
+
+    <!-- Left bush — decorative -->
+    <div id="bush-left">
+      <div class="bl-blob-1"></div>
+      <div class="bl-blob-2"></div>
+      <div class="bl-blob-3"></div>
+    </div>
+
+
+    <!-- Center bush — decorative -->
+    <div id="bush-center">
+      <div class="bc-blob-1"></div>
+      <div class="bc-blob-2"></div>
+      <div class="bc-blob-3"></div>
+    </div>
+
+    <!-- Flowers — right cluster (near egg-3) -->
+    <div id="flowers-right">
+      <svg width="130" height="72" viewBox="0 0 130 72" overflow="visible">
+        <!-- Stems -->
+        <line x1="16"  y1="70" x2="16"  y2="38" stroke="#4A9228" stroke-width="2.5" stroke-linecap="round"/>
+        <line x1="40"  y1="72" x2="36"  y2="34" stroke="#4A9228" stroke-width="2.5" stroke-linecap="round"/>
+        <line x1="65"  y1="72" x2="68"  y2="30" stroke="#4A9228" stroke-width="2.5" stroke-linecap="round"/>
+        <line x1="90"  y1="72" x2="93"  y2="26" stroke="#4A9228" stroke-width="2.5" stroke-linecap="round"/>
+        <line x1="115" y1="72" x2="112" y2="32" stroke="#4A9228" stroke-width="2.5" stroke-linecap="round"/>
+        <!-- Leaves -->
+        <ellipse cx="12" cy="52" rx="8" ry="3.5" fill="#5CBF3A" transform="rotate(-35,12,52)"/>
+        <ellipse cx="20" cy="48" rx="7" ry="3"   fill="#4AA830" transform="rotate(30,20,48)"/>
+        <ellipse cx="62" cy="50" rx="8" ry="3"   fill="#5CBF3A" transform="rotate(-25,62,50)"/>
+        <ellipse cx="88" cy="46" rx="7" ry="3"   fill="#4AA830" transform="rotate(28,88,46)"/>
+        <ellipse cx="118" cy="50" rx="7" ry="3"  fill="#5CBF3A" transform="rotate(-30,118,50)"/>
+        <!-- Flower 1 – pink, big -->
+        <g transform="translate(16,32)">
+          <ellipse cx="0" cy="-9" rx="6" ry="9.5" fill="#FFB3C6" opacity=".95"/>
+          <ellipse cx="0" cy="9"  rx="6" ry="9.5" fill="#FFB3C6" opacity=".95"/>
+          <ellipse cx="-9" cy="0" rx="9.5" ry="6" fill="#FFB3C6" opacity=".95"/>
+          <ellipse cx="9"  cy="0" rx="9.5" ry="6" fill="#FFB3C6" opacity=".95"/>
+          <ellipse cx="-7" cy="-7" rx="5.5" ry="8.5" fill="#FFB3C6" opacity=".8" transform="rotate(-45,-7,-7)"/>
+          <ellipse cx="7"  cy="-7" rx="5.5" ry="8.5" fill="#FFB3C6" opacity=".8" transform="rotate(45,7,-7)"/>
+          <ellipse cx="-7" cy="7"  rx="5.5" ry="8.5" fill="#FFB3C6" opacity=".8" transform="rotate(45,-7,7)"/>
+          <ellipse cx="7"  cy="7"  rx="5.5" ry="8.5" fill="#FFB3C6" opacity=".8" transform="rotate(-45,7,7)"/>
+          <circle cx="0" cy="0" r="8" fill="#FFD700"/><circle cx="0" cy="0" r="4.5" fill="#F59E0B"/>
+        </g>
+        <!-- Flower 2 – lavender -->
+        <g transform="translate(38,28)">
+          <ellipse cx="0" cy="-8" rx="5" ry="8" fill="#DDA8FF" opacity=".95"/>
+          <ellipse cx="0" cy="8"  rx="5" ry="8" fill="#DDA8FF" opacity=".95"/>
+          <ellipse cx="-8" cy="0" rx="8" ry="5" fill="#DDA8FF" opacity=".95"/>
+          <ellipse cx="8"  cy="0" rx="8" ry="5" fill="#DDA8FF" opacity=".95"/>
+          <ellipse cx="-6" cy="-6" rx="4.5" ry="7" fill="#DDA8FF" opacity=".8" transform="rotate(-45,-6,-6)"/>
+          <ellipse cx="6"  cy="-6" rx="4.5" ry="7" fill="#DDA8FF" opacity=".8" transform="rotate(45,6,-6)"/>
+          <ellipse cx="-6" cy="6"  rx="4.5" ry="7" fill="#DDA8FF" opacity=".8" transform="rotate(45,-6,6)"/>
+          <ellipse cx="6"  cy="6"  rx="4.5" ry="7" fill="#DDA8FF" opacity=".8" transform="rotate(-45,6,6)"/>
+          <circle cx="0" cy="0" r="7" fill="#FDE68A"/><circle cx="0" cy="0" r="4" fill="#FBBF24"/>
+        </g>
+        <!-- Flower 3 – mint green -->
+        <g transform="translate(68,24)">
+          <ellipse cx="0" cy="-7" rx="4.5" ry="7.5" fill="#A8F0C8" opacity=".95"/>
+          <ellipse cx="0" cy="7"  rx="4.5" ry="7.5" fill="#A8F0C8" opacity=".95"/>
+          <ellipse cx="-7" cy="0" rx="7.5" ry="4.5" fill="#A8F0C8" opacity=".95"/>
+          <ellipse cx="7"  cy="0" rx="7.5" ry="4.5" fill="#A8F0C8" opacity=".95"/>
+          <ellipse cx="-5" cy="-5" rx="4" ry="6.5" fill="#A8F0C8" opacity=".8" transform="rotate(-45,-5,-5)"/>
+          <ellipse cx="5"  cy="-5" rx="4" ry="6.5" fill="#A8F0C8" opacity=".8" transform="rotate(45,5,-5)"/>
+          <ellipse cx="-5" cy="5"  rx="4" ry="6.5" fill="#A8F0C8" opacity=".8" transform="rotate(45,-5,5)"/>
+          <ellipse cx="5"  cy="5"  rx="4" ry="6.5" fill="#A8F0C8" opacity=".8" transform="rotate(-45,5,5)"/>
+          <circle cx="0" cy="0" r="6.5" fill="#FFD700"/><circle cx="0" cy="0" r="3.5" fill="#F59E0B"/>
+        </g>
+        <!-- Flower 4 – coral -->
+        <g transform="translate(93,20)">
+          <ellipse cx="0" cy="-7" rx="4.5" ry="7" fill="#FFA07A" opacity=".95"/>
+          <ellipse cx="0" cy="7"  rx="4.5" ry="7" fill="#FFA07A" opacity=".95"/>
+          <ellipse cx="-7" cy="0" rx="7" ry="4.5" fill="#FFA07A" opacity=".95"/>
+          <ellipse cx="7"  cy="0" rx="7" ry="4.5" fill="#FFA07A" opacity=".95"/>
+          <ellipse cx="-5" cy="-5" rx="4" ry="6.5" fill="#FFA07A" opacity=".8" transform="rotate(-45,-5,-5)"/>
+          <ellipse cx="5"  cy="-5" rx="4" ry="6.5" fill="#FFA07A" opacity=".8" transform="rotate(45,5,-5)"/>
+          <ellipse cx="-5" cy="5"  rx="4" ry="6.5" fill="#FFA07A" opacity=".8" transform="rotate(45,-5,5)"/>
+          <ellipse cx="5"  cy="5"  rx="4" ry="6.5" fill="#FFA07A" opacity=".8" transform="rotate(-45,5,5)"/>
+          <circle cx="0" cy="0" r="6.5" fill="#FDE68A"/><circle cx="0" cy="0" r="3.5" fill="#FBBF24"/>
+        </g>
+        <!-- Flower 5 – sky blue -->
+        <g transform="translate(112,26)">
+          <ellipse cx="0" cy="-7" rx="4.5" ry="7" fill="#93C5FD" opacity=".95"/>
+          <ellipse cx="0" cy="7"  rx="4.5" ry="7" fill="#93C5FD" opacity=".95"/>
+          <ellipse cx="-7" cy="0" rx="7" ry="4.5" fill="#93C5FD" opacity=".95"/>
+          <ellipse cx="7"  cy="0" rx="7" ry="4.5" fill="#93C5FD" opacity=".95"/>
+          <ellipse cx="-5" cy="-5" rx="4" ry="6" fill="#93C5FD" opacity=".8" transform="rotate(-45,-5,-5)"/>
+          <ellipse cx="5"  cy="-5" rx="4" ry="6" fill="#93C5FD" opacity=".8" transform="rotate(45,5,-5)"/>
+          <ellipse cx="-5" cy="5"  rx="4" ry="6" fill="#93C5FD" opacity=".8" transform="rotate(45,-5,5)"/>
+          <ellipse cx="5"  cy="5"  rx="4" ry="6" fill="#93C5FD" opacity=".8" transform="rotate(-45,5,5)"/>
+          <circle cx="0" cy="0" r="6.5" fill="#FFD700"/><circle cx="0" cy="0" r="3.5" fill="#F59E0B"/>
+        </g>
+        <!-- Grass sprigs between flowers -->
+        <path d="M0,72 Q4,48 1,68"  stroke="#5CBF3A" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+        <path d="M28,72 Q32,44 30,70" stroke="#4A9228" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+        <path d="M52,72 Q54,50 58,70" stroke="#5CBF3A" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+        <path d="M78,72 Q82,46 80,70" stroke="#4A9228" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+        <path d="M102,72 Q106,48 104,70" stroke="#5CBF3A" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+        <path d="M128,72 Q130,50 126,70" stroke="#4A9228" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+      </svg>
+    </div>
+
+    <!-- Grass clump that hides bottom of egg-3 (z-index 12) -->
+    <div class="flowers-cover"></div>
+
+    <!-- Left flower cluster — decorative -->
+    <div id="flowers-left">
+      <svg width="95" height="62" viewBox="0 0 95 62" overflow="visible">
+        <line x1="14"  y1="60" x2="14"  y2="34" stroke="#4A9228" stroke-width="2.5" stroke-linecap="round"/>
+        <line x1="38"  y1="62" x2="34"  y2="30" stroke="#4A9228" stroke-width="2.5" stroke-linecap="round"/>
+        <line x1="62"  y1="62" x2="65"  y2="28" stroke="#4A9228" stroke-width="2.5" stroke-linecap="round"/>
+        <line x1="84"  y1="62" x2="82"  y2="32" stroke="#4A9228" stroke-width="2.5" stroke-linecap="round"/>
+        <ellipse cx="10" cy="46" rx="7" ry="3" fill="#5CBF3A" transform="rotate(-35,10,46)"/>
+        <ellipse cx="64" cy="46" rx="7" ry="3" fill="#4AA830" transform="rotate(28,64,46)"/>
+        <!-- Flower 1 – yellow -->
+        <g transform="translate(14,28)">
+          <ellipse cx="0" cy="-8" rx="5" ry="8.5" fill="#FDE68A" opacity=".95"/>
+          <ellipse cx="0" cy="8"  rx="5" ry="8.5" fill="#FDE68A" opacity=".95"/>
+          <ellipse cx="-8" cy="0" rx="8.5" ry="5" fill="#FDE68A" opacity=".95"/>
+          <ellipse cx="8"  cy="0" rx="8.5" ry="5" fill="#FDE68A" opacity=".95"/>
+          <ellipse cx="-6" cy="-6" rx="4.5" ry="7" fill="#FDE68A" opacity=".8" transform="rotate(-45,-6,-6)"/>
+          <ellipse cx="6"  cy="-6" rx="4.5" ry="7" fill="#FDE68A" opacity=".8" transform="rotate(45,6,-6)"/>
+          <ellipse cx="-6" cy="6"  rx="4.5" ry="7" fill="#FDE68A" opacity=".8" transform="rotate(45,-6,6)"/>
+          <ellipse cx="6"  cy="6"  rx="4.5" ry="7" fill="#FDE68A" opacity=".8" transform="rotate(-45,6,6)"/>
+          <circle cx="0" cy="0" r="7.5" fill="#F59E0B"/><circle cx="0" cy="0" r="4" fill="#D97706"/>
+        </g>
+        <!-- Flower 2 – pink -->
+        <g transform="translate(36,24)">
+          <ellipse cx="0" cy="-7" rx="4.5" ry="7.5" fill="#FFB3C6" opacity=".95"/>
+          <ellipse cx="0" cy="7"  rx="4.5" ry="7.5" fill="#FFB3C6" opacity=".95"/>
+          <ellipse cx="-7" cy="0" rx="7.5" ry="4.5" fill="#FFB3C6" opacity=".95"/>
+          <ellipse cx="7"  cy="0" rx="7.5" ry="4.5" fill="#FFB3C6" opacity=".95"/>
+          <ellipse cx="-5" cy="-5" rx="4" ry="6.5" fill="#FFB3C6" opacity=".8" transform="rotate(-45,-5,-5)"/>
+          <ellipse cx="5"  cy="-5" rx="4" ry="6.5" fill="#FFB3C6" opacity=".8" transform="rotate(45,5,-5)"/>
+          <ellipse cx="-5" cy="5"  rx="4" ry="6.5" fill="#FFB3C6" opacity=".8" transform="rotate(45,-5,5)"/>
+          <ellipse cx="5"  cy="5"  rx="4" ry="6.5" fill="#FFB3C6" opacity=".8" transform="rotate(-45,5,5)"/>
+          <circle cx="0" cy="0" r="7" fill="#FFD700"/><circle cx="0" cy="0" r="3.5" fill="#F59E0B"/>
+        </g>
+        <!-- Flower 3 – lavender -->
+        <g transform="translate(65,22)">
+          <ellipse cx="0" cy="-7" rx="4" ry="7" fill="#DDA8FF" opacity=".95"/>
+          <ellipse cx="0" cy="7"  rx="4" ry="7" fill="#DDA8FF" opacity=".95"/>
+          <ellipse cx="-7" cy="0" rx="7" ry="4" fill="#DDA8FF" opacity=".95"/>
+          <ellipse cx="7"  cy="0" rx="7" ry="4" fill="#DDA8FF" opacity=".95"/>
+          <ellipse cx="-5" cy="-5" rx="3.5" ry="6" fill="#DDA8FF" opacity=".8" transform="rotate(-45,-5,-5)"/>
+          <ellipse cx="5"  cy="-5" rx="3.5" ry="6" fill="#DDA8FF" opacity=".8" transform="rotate(45,5,-5)"/>
+          <ellipse cx="-5" cy="5"  rx="3.5" ry="6" fill="#DDA8FF" opacity=".8" transform="rotate(45,-5,5)"/>
+          <ellipse cx="5"  cy="5"  rx="3.5" ry="6" fill="#DDA8FF" opacity=".8" transform="rotate(-45,5,5)"/>
+          <circle cx="0" cy="0" r="6" fill="#FDE68A"/><circle cx="0" cy="0" r="3" fill="#FBBF24"/>
+        </g>
+        <!-- Flower 4 – coral small -->
+        <g transform="translate(83,26)">
+          <ellipse cx="0" cy="-6" rx="4" ry="6.5" fill="#FFA07A" opacity=".95"/>
+          <ellipse cx="0" cy="6"  rx="4" ry="6.5" fill="#FFA07A" opacity=".95"/>
+          <ellipse cx="-6" cy="0" rx="6.5" ry="4" fill="#FFA07A" opacity=".95"/>
+          <ellipse cx="6"  cy="0" rx="6.5" ry="4" fill="#FFA07A" opacity=".95"/>
+          <ellipse cx="-4.5" cy="-4.5" rx="3.5" ry="5.5" fill="#FFA07A" opacity=".8" transform="rotate(-45,-4.5,-4.5)"/>
+          <ellipse cx="4.5" cy="-4.5" rx="3.5" ry="5.5" fill="#FFA07A" opacity=".8" transform="rotate(45,4.5,-4.5)"/>
+          <ellipse cx="-4.5" cy="4.5"  rx="3.5" ry="5.5" fill="#FFA07A" opacity=".8" transform="rotate(45,-4.5,4.5)"/>
+          <ellipse cx="4.5" cy="4.5"  rx="3.5" ry="5.5" fill="#FFA07A" opacity=".8" transform="rotate(-45,4.5,4.5)"/>
+          <circle cx="0" cy="0" r="6" fill="#FDE68A"/><circle cx="0" cy="0" r="3" fill="#FBBF24"/>
+        </g>
+        <path d="M0,62 Q4,42 1,58"  stroke="#5CBF3A" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <path d="M24,62 Q28,40 26,60" stroke="#4A9228" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <path d="M50,62 Q52,44 56,60" stroke="#5CBF3A" stroke-width="2" fill="none" stroke-linecap="round"/>
+      </svg>
+    </div>
+
+    <!-- Center flower cluster — decorative mid-ground -->
+    <div id="flowers-center">
+      <svg width="115" height="68" viewBox="0 0 115 68" overflow="visible">
+        <line x1="14"  y1="68" x2="14"  y2="38" stroke="#4A9228" stroke-width="2.5" stroke-linecap="round"/>
+        <line x1="38"  y1="68" x2="35"  y2="32" stroke="#4A9228" stroke-width="2.5" stroke-linecap="round"/>
+        <line x1="62"  y1="68" x2="65"  y2="30" stroke="#4A9228" stroke-width="2.5" stroke-linecap="round"/>
+        <line x1="87"  y1="68" x2="84"  y2="34" stroke="#4A9228" stroke-width="2.5" stroke-linecap="round"/>
+        <line x1="108" y1="68" x2="108" y2="38" stroke="#4A9228" stroke-width="2.5" stroke-linecap="round"/>
+        <ellipse cx="10" cy="52" rx="7" ry="3" fill="#5CBF3A" transform="rotate(-35,10,52)"/>
+        <ellipse cx="65" cy="44" rx="7" ry="3" fill="#4AA830" transform="rotate(28,65,44)"/>
+        <!-- Flower 1 – coral big -->
+        <g transform="translate(14,32)">
+          <ellipse cx="0" cy="-9" rx="5.5" ry="9.5" fill="#FFA07A" opacity=".95"/>
+          <ellipse cx="0" cy="9"  rx="5.5" ry="9.5" fill="#FFA07A" opacity=".95"/>
+          <ellipse cx="-9" cy="0" rx="9.5" ry="5.5" fill="#FFA07A" opacity=".95"/>
+          <ellipse cx="9"  cy="0" rx="9.5" ry="5.5" fill="#FFA07A" opacity=".95"/>
+          <ellipse cx="-7" cy="-7" rx="5" ry="8"   fill="#FFA07A" opacity=".82" transform="rotate(-45,-7,-7)"/>
+          <ellipse cx="7"  cy="-7" rx="5" ry="8"   fill="#FFA07A" opacity=".82" transform="rotate(45,7,-7)"/>
+          <ellipse cx="-7" cy="7"  rx="5" ry="8"   fill="#FFA07A" opacity=".82" transform="rotate(45,-7,7)"/>
+          <ellipse cx="7"  cy="7"  rx="5" ry="8"   fill="#FFA07A" opacity=".82" transform="rotate(-45,7,7)"/>
+          <circle cx="0" cy="0" r="8" fill="#FDE68A"/><circle cx="0" cy="0" r="4.5" fill="#FBBF24"/>
+        </g>
+        <!-- Flower 2 – sky blue -->
+        <g transform="translate(36,26)">
+          <ellipse cx="0" cy="-8" rx="5" ry="8.5" fill="#93C5FD" opacity=".95"/>
+          <ellipse cx="0" cy="8"  rx="5" ry="8.5" fill="#93C5FD" opacity=".95"/>
+          <ellipse cx="-8" cy="0" rx="8.5" ry="5" fill="#93C5FD" opacity=".95"/>
+          <ellipse cx="8"  cy="0" rx="8.5" ry="5" fill="#93C5FD" opacity=".95"/>
+          <ellipse cx="-6" cy="-6" rx="4.5" ry="7.5" fill="#93C5FD" opacity=".8" transform="rotate(-45,-6,-6)"/>
+          <ellipse cx="6"  cy="-6" rx="4.5" ry="7.5" fill="#93C5FD" opacity=".8" transform="rotate(45,6,-6)"/>
+          <ellipse cx="-6" cy="6"  rx="4.5" ry="7.5" fill="#93C5FD" opacity=".8" transform="rotate(45,-6,6)"/>
+          <ellipse cx="6"  cy="6"  rx="4.5" ry="7.5" fill="#93C5FD" opacity=".8" transform="rotate(-45,6,6)"/>
+          <circle cx="0" cy="0" r="7.5" fill="#FFD700"/><circle cx="0" cy="0" r="4" fill="#F59E0B"/>
+        </g>
+        <!-- Flower 3 – mint -->
+        <g transform="translate(65,24)">
+          <ellipse cx="0" cy="-8" rx="5" ry="8.5" fill="#A8F0C8" opacity=".95"/>
+          <ellipse cx="0" cy="8"  rx="5" ry="8.5" fill="#A8F0C8" opacity=".95"/>
+          <ellipse cx="-8" cy="0" rx="8.5" ry="5" fill="#A8F0C8" opacity=".95"/>
+          <ellipse cx="8"  cy="0" rx="8.5" ry="5" fill="#A8F0C8" opacity=".95"/>
+          <ellipse cx="-6" cy="-6" rx="4.5" ry="7.5" fill="#A8F0C8" opacity=".8" transform="rotate(-45,-6,-6)"/>
+          <ellipse cx="6"  cy="-6" rx="4.5" ry="7.5" fill="#A8F0C8" opacity=".8" transform="rotate(45,6,-6)"/>
+          <ellipse cx="-6" cy="6"  rx="4.5" ry="7.5" fill="#A8F0C8" opacity=".8" transform="rotate(45,-6,6)"/>
+          <ellipse cx="6"  cy="6"  rx="4.5" ry="7.5" fill="#A8F0C8" opacity=".8" transform="rotate(-45,6,6)"/>
+          <circle cx="0" cy="0" r="7.5" fill="#FFD700"/><circle cx="0" cy="0" r="4" fill="#F59E0B"/>
+        </g>
+        <!-- Flower 4 – lavender -->
+        <g transform="translate(85,28)">
+          <ellipse cx="0" cy="-7" rx="4.5" ry="7.5" fill="#DDA8FF" opacity=".95"/>
+          <ellipse cx="0" cy="7"  rx="4.5" ry="7.5" fill="#DDA8FF" opacity=".95"/>
+          <ellipse cx="-7" cy="0" rx="7.5" ry="4.5" fill="#DDA8FF" opacity=".95"/>
+          <ellipse cx="7"  cy="0" rx="7.5" ry="4.5" fill="#DDA8FF" opacity=".95"/>
+          <ellipse cx="-5" cy="-5" rx="4" ry="6.5" fill="#DDA8FF" opacity=".8" transform="rotate(-45,-5,-5)"/>
+          <ellipse cx="5"  cy="-5" rx="4" ry="6.5" fill="#DDA8FF" opacity=".8" transform="rotate(45,5,-5)"/>
+          <ellipse cx="-5" cy="5"  rx="4" ry="6.5" fill="#DDA8FF" opacity=".8" transform="rotate(45,-5,5)"/>
+          <ellipse cx="5"  cy="5"  rx="4" ry="6.5" fill="#DDA8FF" opacity=".8" transform="rotate(-45,5,5)"/>
+          <circle cx="0" cy="0" r="7" fill="#FDE68A"/><circle cx="0" cy="0" r="3.5" fill="#FBBF24"/>
+        </g>
+        <!-- Flower 5 – pink -->
+        <g transform="translate(108,32)">
+          <ellipse cx="0" cy="-8" rx="5" ry="8.5" fill="#FFB3C6" opacity=".95"/>
+          <ellipse cx="0" cy="8"  rx="5" ry="8.5" fill="#FFB3C6" opacity=".95"/>
+          <ellipse cx="-8" cy="0" rx="8.5" ry="5" fill="#FFB3C6" opacity=".95"/>
+          <ellipse cx="8"  cy="0" rx="8.5" ry="5" fill="#FFB3C6" opacity=".95"/>
+          <ellipse cx="-6" cy="-6" rx="4.5" ry="7" fill="#FFB3C6" opacity=".8" transform="rotate(-45,-6,-6)"/>
+          <ellipse cx="6"  cy="-6" rx="4.5" ry="7" fill="#FFB3C6" opacity=".8" transform="rotate(45,6,-6)"/>
+          <ellipse cx="-6" cy="6"  rx="4.5" ry="7" fill="#FFB3C6" opacity=".8" transform="rotate(45,-6,6)"/>
+          <ellipse cx="6"  cy="6"  rx="4.5" ry="7" fill="#FFB3C6" opacity=".8" transform="rotate(-45,6,6)"/>
+          <circle cx="0" cy="0" r="7.5" fill="#FFD700"/><circle cx="0" cy="0" r="4" fill="#F59E0B"/>
+        </g>
+        <path d="M0,68 Q3,48 1,65"   stroke="#5CBF3A" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <path d="M26,68 Q29,46 27,65" stroke="#4A9228" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <path d="M50,68 Q52,48 54,65" stroke="#5CBF3A" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <path d="M75,68 Q78,46 76,65" stroke="#4A9228" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <path d="M96,68 Q99,48 97,65" stroke="#5CBF3A" stroke-width="2" fill="none" stroke-linecap="round"/>
+      </svg>
+    </div>
+
+    <!-- Bottom flower row — wide strip across the ground -->
+    <div id="flowers-ground">
+      <svg width="320" height="55" viewBox="0 0 320 55" overflow="visible">
+        <line x1="14"  y1="55" x2="14"  y2="30" stroke="#4A9228" stroke-width="2" stroke-linecap="round"/>
+        <line x1="46"  y1="55" x2="44"  y2="26" stroke="#4A9228" stroke-width="2" stroke-linecap="round"/>
+        <line x1="78"  y1="55" x2="80"  y2="24" stroke="#4A9228" stroke-width="2" stroke-linecap="round"/>
+        <line x1="110" y1="55" x2="108" y2="22" stroke="#4A9228" stroke-width="2" stroke-linecap="round"/>
+        <line x1="142" y1="55" x2="142" y2="26" stroke="#4A9228" stroke-width="2" stroke-linecap="round"/>
+        <line x1="178" y1="55" x2="180" y2="22" stroke="#4A9228" stroke-width="2" stroke-linecap="round"/>
+        <line x1="210" y1="55" x2="212" y2="24" stroke="#4A9228" stroke-width="2" stroke-linecap="round"/>
+        <line x1="244" y1="55" x2="242" y2="26" stroke="#4A9228" stroke-width="2" stroke-linecap="round"/>
+        <line x1="280" y1="55" x2="278" y2="30" stroke="#4A9228" stroke-width="2" stroke-linecap="round"/>
+        <line x1="310" y1="55" x2="310" y2="32" stroke="#4A9228" stroke-width="2" stroke-linecap="round"/>
+        <ellipse cx="10"  cy="44" rx="6" ry="2.5" fill="#5CBF3A" transform="rotate(-32,10,44)"/>
+        <ellipse cx="44"  cy="40" rx="6" ry="2.5" fill="#4AA830" transform="rotate(28,44,40)"/>
+        <ellipse cx="110" cy="36" rx="6" ry="2.5" fill="#5CBF3A" transform="rotate(-26,110,36)"/>
+        <ellipse cx="180" cy="36" rx="6" ry="2.5" fill="#4AA830" transform="rotate(26,180,36)"/>
+        <ellipse cx="244" cy="40" rx="6" ry="2.5" fill="#5CBF3A" transform="rotate(-28,244,40)"/>
+        <ellipse cx="312" cy="44" rx="6" ry="2.5" fill="#4AA830" transform="rotate(30,312,44)"/>
+        <!-- Flower 1 – yellow -->
+        <g transform="translate(14,24)">
+          <ellipse cx="0" cy="-7" rx="4.5" ry="7.5" fill="#FDE68A" opacity=".95"/>
+          <ellipse cx="0" cy="7"  rx="4.5" ry="7.5" fill="#FDE68A" opacity=".95"/>
+          <ellipse cx="-7" cy="0" rx="7.5" ry="4.5" fill="#FDE68A" opacity=".95"/>
+          <ellipse cx="7"  cy="0" rx="7.5" ry="4.5" fill="#FDE68A" opacity=".95"/>
+          <ellipse cx="-5" cy="-5" rx="4" ry="6.5" fill="#FDE68A" opacity=".8" transform="rotate(-45,-5,-5)"/>
+          <ellipse cx="5"  cy="-5" rx="4" ry="6.5" fill="#FDE68A" opacity=".8" transform="rotate(45,5,-5)"/>
+          <ellipse cx="-5" cy="5"  rx="4" ry="6.5" fill="#FDE68A" opacity=".8" transform="rotate(45,-5,5)"/>
+          <ellipse cx="5"  cy="5"  rx="4" ry="6.5" fill="#FDE68A" opacity=".8" transform="rotate(-45,5,5)"/>
+          <circle cx="0" cy="0" r="6.5" fill="#F59E0B"/><circle cx="0" cy="0" r="3.5" fill="#D97706"/>
+        </g>
+        <!-- Flower 2 – pink -->
+        <g transform="translate(44,20)">
+          <ellipse cx="0" cy="-8" rx="5" ry="8.5" fill="#FFB3C6" opacity=".95"/>
+          <ellipse cx="0" cy="8"  rx="5" ry="8.5" fill="#FFB3C6" opacity=".95"/>
+          <ellipse cx="-8" cy="0" rx="8.5" ry="5" fill="#FFB3C6" opacity=".95"/>
+          <ellipse cx="8"  cy="0" rx="8.5" ry="5" fill="#FFB3C6" opacity=".95"/>
+          <ellipse cx="-6" cy="-6" rx="4.5" ry="7" fill="#FFB3C6" opacity=".8" transform="rotate(-45,-6,-6)"/>
+          <ellipse cx="6"  cy="-6" rx="4.5" ry="7" fill="#FFB3C6" opacity=".8" transform="rotate(45,6,-6)"/>
+          <ellipse cx="-6" cy="6"  rx="4.5" ry="7" fill="#FFB3C6" opacity=".8" transform="rotate(45,-6,6)"/>
+          <ellipse cx="6"  cy="6"  rx="4.5" ry="7" fill="#FFB3C6" opacity=".8" transform="rotate(-45,6,6)"/>
+          <circle cx="0" cy="0" r="7.5" fill="#FFD700"/><circle cx="0" cy="0" r="4" fill="#F59E0B"/>
+        </g>
+        <!-- Flower 3 – mint -->
+        <g transform="translate(80,18)">
+          <ellipse cx="0" cy="-7" rx="4.5" ry="7.5" fill="#A8F0C8" opacity=".95"/>
+          <ellipse cx="0" cy="7"  rx="4.5" ry="7.5" fill="#A8F0C8" opacity=".95"/>
+          <ellipse cx="-7" cy="0" rx="7.5" ry="4.5" fill="#A8F0C8" opacity=".95"/>
+          <ellipse cx="7"  cy="0" rx="7.5" ry="4.5" fill="#A8F0C8" opacity=".95"/>
+          <ellipse cx="-5" cy="-5" rx="4" ry="6.5" fill="#A8F0C8" opacity=".8" transform="rotate(-45,-5,-5)"/>
+          <ellipse cx="5"  cy="-5" rx="4" ry="6.5" fill="#A8F0C8" opacity=".8" transform="rotate(45,5,-5)"/>
+          <ellipse cx="-5" cy="5"  rx="4" ry="6.5" fill="#A8F0C8" opacity=".8" transform="rotate(45,-5,5)"/>
+          <ellipse cx="5"  cy="5"  rx="4" ry="6.5" fill="#A8F0C8" opacity=".8" transform="rotate(-45,5,5)"/>
+          <circle cx="0" cy="0" r="6.5" fill="#FFD700"/><circle cx="0" cy="0" r="3.5" fill="#F59E0B"/>
+        </g>
+        <!-- Flower 4 – lavender -->
+        <g transform="translate(108,16)">
+          <ellipse cx="0" cy="-7" rx="4.5" ry="7.5" fill="#DDA8FF" opacity=".95"/>
+          <ellipse cx="0" cy="7"  rx="4.5" ry="7.5" fill="#DDA8FF" opacity=".95"/>
+          <ellipse cx="-7" cy="0" rx="7.5" ry="4.5" fill="#DDA8FF" opacity=".95"/>
+          <ellipse cx="7"  cy="0" rx="7.5" ry="4.5" fill="#DDA8FF" opacity=".95"/>
+          <ellipse cx="-5" cy="-5" rx="4" ry="6.5" fill="#DDA8FF" opacity=".8" transform="rotate(-45,-5,-5)"/>
+          <ellipse cx="5"  cy="-5" rx="4" ry="6.5" fill="#DDA8FF" opacity=".8" transform="rotate(45,5,-5)"/>
+          <ellipse cx="-5" cy="5"  rx="4" ry="6.5" fill="#DDA8FF" opacity=".8" transform="rotate(45,-5,5)"/>
+          <ellipse cx="5"  cy="5"  rx="4" ry="6.5" fill="#DDA8FF" opacity=".8" transform="rotate(-45,5,5)"/>
+          <circle cx="0" cy="0" r="6.5" fill="#FDE68A"/><circle cx="0" cy="0" r="3.5" fill="#FBBF24"/>
+        </g>
+        <!-- Flower 5 – coral -->
+        <g transform="translate(142,20)">
+          <ellipse cx="0" cy="-8" rx="5" ry="8.5" fill="#FFA07A" opacity=".95"/>
+          <ellipse cx="0" cy="8"  rx="5" ry="8.5" fill="#FFA07A" opacity=".95"/>
+          <ellipse cx="-8" cy="0" rx="8.5" ry="5" fill="#FFA07A" opacity=".95"/>
+          <ellipse cx="8"  cy="0" rx="8.5" ry="5" fill="#FFA07A" opacity=".95"/>
+          <ellipse cx="-6" cy="-6" rx="4.5" ry="7" fill="#FFA07A" opacity=".8" transform="rotate(-45,-6,-6)"/>
+          <ellipse cx="6"  cy="-6" rx="4.5" ry="7" fill="#FFA07A" opacity=".8" transform="rotate(45,6,-6)"/>
+          <ellipse cx="-6" cy="6"  rx="4.5" ry="7" fill="#FFA07A" opacity=".8" transform="rotate(45,-6,6)"/>
+          <ellipse cx="6"  cy="6"  rx="4.5" ry="7" fill="#FFA07A" opacity=".8" transform="rotate(-45,6,6)"/>
+          <circle cx="0" cy="0" r="7.5" fill="#FDE68A"/><circle cx="0" cy="0" r="4" fill="#FBBF24"/>
+        </g>
+        <!-- Flower 6 – sky blue -->
+        <g transform="translate(180,16)">
+          <ellipse cx="0" cy="-7" rx="4.5" ry="7" fill="#93C5FD" opacity=".95"/>
+          <ellipse cx="0" cy="7"  rx="4.5" ry="7" fill="#93C5FD" opacity=".95"/>
+          <ellipse cx="-7" cy="0" rx="7" ry="4.5" fill="#93C5FD" opacity=".95"/>
+          <ellipse cx="7"  cy="0" rx="7" ry="4.5" fill="#93C5FD" opacity=".95"/>
+          <ellipse cx="-5" cy="-5" rx="4" ry="6" fill="#93C5FD" opacity=".8" transform="rotate(-45,-5,-5)"/>
+          <ellipse cx="5"  cy="-5" rx="4" ry="6" fill="#93C5FD" opacity=".8" transform="rotate(45,5,-5)"/>
+          <ellipse cx="-5" cy="5"  rx="4" ry="6" fill="#93C5FD" opacity=".8" transform="rotate(45,-5,5)"/>
+          <ellipse cx="5"  cy="5"  rx="4" ry="6" fill="#93C5FD" opacity=".8" transform="rotate(-45,5,5)"/>
+          <circle cx="0" cy="0" r="6.5" fill="#FFD700"/><circle cx="0" cy="0" r="3.5" fill="#F59E0B"/>
+        </g>
+        <!-- Flower 7 – yellow -->
+        <g transform="translate(212,18)">
+          <ellipse cx="0" cy="-7" rx="4.5" ry="7.5" fill="#FDE68A" opacity=".95"/>
+          <ellipse cx="0" cy="7"  rx="4.5" ry="7.5" fill="#FDE68A" opacity=".95"/>
+          <ellipse cx="-7" cy="0" rx="7.5" ry="4.5" fill="#FDE68A" opacity=".95"/>
+          <ellipse cx="7"  cy="0" rx="7.5" ry="4.5" fill="#FDE68A" opacity=".95"/>
+          <ellipse cx="-5" cy="-5" rx="4" ry="6.5" fill="#FDE68A" opacity=".8" transform="rotate(-45,-5,-5)"/>
+          <ellipse cx="5"  cy="-5" rx="4" ry="6.5" fill="#FDE68A" opacity=".8" transform="rotate(45,5,-5)"/>
+          <ellipse cx="-5" cy="5"  rx="4" ry="6.5" fill="#FDE68A" opacity=".8" transform="rotate(45,-5,5)"/>
+          <ellipse cx="5"  cy="5"  rx="4" ry="6.5" fill="#FDE68A" opacity=".8" transform="rotate(-45,5,5)"/>
+          <circle cx="0" cy="0" r="6.5" fill="#F59E0B"/><circle cx="0" cy="0" r="3.5" fill="#D97706"/>
+        </g>
+        <!-- Flower 8 – lavender -->
+        <g transform="translate(242,20)">
+          <ellipse cx="0" cy="-8" rx="5" ry="8.5" fill="#DDA8FF" opacity=".95"/>
+          <ellipse cx="0" cy="8"  rx="5" ry="8.5" fill="#DDA8FF" opacity=".95"/>
+          <ellipse cx="-8" cy="0" rx="8.5" ry="5" fill="#DDA8FF" opacity=".95"/>
+          <ellipse cx="8"  cy="0" rx="8.5" ry="5" fill="#DDA8FF" opacity=".95"/>
+          <ellipse cx="-6" cy="-6" rx="4.5" ry="7" fill="#DDA8FF" opacity=".8" transform="rotate(-45,-6,-6)"/>
+          <ellipse cx="6"  cy="-6" rx="4.5" ry="7" fill="#DDA8FF" opacity=".8" transform="rotate(45,6,-6)"/>
+          <ellipse cx="-6" cy="6"  rx="4.5" ry="7" fill="#DDA8FF" opacity=".8" transform="rotate(45,-6,6)"/>
+          <ellipse cx="6"  cy="6"  rx="4.5" ry="7" fill="#DDA8FF" opacity=".8" transform="rotate(-45,6,6)"/>
+          <circle cx="0" cy="0" r="7.5" fill="#FDE68A"/><circle cx="0" cy="0" r="4" fill="#FBBF24"/>
+        </g>
+        <!-- Flower 9 – mint -->
+        <g transform="translate(278,24)">
+          <ellipse cx="0" cy="-7" rx="4.5" ry="7.5" fill="#A8F0C8" opacity=".95"/>
+          <ellipse cx="0" cy="7"  rx="4.5" ry="7.5" fill="#A8F0C8" opacity=".95"/>
+          <ellipse cx="-7" cy="0" rx="7.5" ry="4.5" fill="#A8F0C8" opacity=".95"/>
+          <ellipse cx="7"  cy="0" rx="7.5" ry="4.5" fill="#A8F0C8" opacity=".95"/>
+          <ellipse cx="-5" cy="-5" rx="4" ry="6.5" fill="#A8F0C8" opacity=".8" transform="rotate(-45,-5,-5)"/>
+          <ellipse cx="5"  cy="-5" rx="4" ry="6.5" fill="#A8F0C8" opacity=".8" transform="rotate(45,5,-5)"/>
+          <ellipse cx="-5" cy="5"  rx="4" ry="6.5" fill="#A8F0C8" opacity=".8" transform="rotate(45,-5,5)"/>
+          <ellipse cx="5"  cy="5"  rx="4" ry="6.5" fill="#A8F0C8" opacity=".8" transform="rotate(-45,5,5)"/>
+          <circle cx="0" cy="0" r="6.5" fill="#FFD700"/><circle cx="0" cy="0" r="3.5" fill="#F59E0B"/>
+        </g>
+        <!-- Flower 10 – pink -->
+        <g transform="translate(310,26)">
+          <ellipse cx="0" cy="-7" rx="4.5" ry="7.5" fill="#FFB3C6" opacity=".95"/>
+          <ellipse cx="0" cy="7"  rx="4.5" ry="7.5" fill="#FFB3C6" opacity=".95"/>
+          <ellipse cx="-7" cy="0" rx="7.5" ry="4.5" fill="#FFB3C6" opacity=".95"/>
+          <ellipse cx="7"  cy="0" rx="7.5" ry="4.5" fill="#FFB3C6" opacity=".95"/>
+          <ellipse cx="-5" cy="-5" rx="4" ry="6.5" fill="#FFB3C6" opacity=".8" transform="rotate(-45,-5,-5)"/>
+          <ellipse cx="5"  cy="-5" rx="4" ry="6.5" fill="#FFB3C6" opacity=".8" transform="rotate(45,5,-5)"/>
+          <ellipse cx="-5" cy="5"  rx="4" ry="6.5" fill="#FFB3C6" opacity=".8" transform="rotate(45,-5,5)"/>
+          <ellipse cx="5"  cy="5"  rx="4" ry="6.5" fill="#FFB3C6" opacity=".8" transform="rotate(-45,5,5)"/>
+          <circle cx="0" cy="0" r="7" fill="#FFD700"/><circle cx="0" cy="0" r="3.5" fill="#F59E0B"/>
+        </g>
+        <path d="M0,55 Q3,36 1,52"    stroke="#5CBF3A" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <path d="M28,55 Q31,34 29,52"  stroke="#4A9228" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <path d="M62,55 Q65,34 63,52"  stroke="#5CBF3A" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <path d="M94,55 Q97,34 95,52"  stroke="#4A9228" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <path d="M126,55 Q129,34 127,52" stroke="#5CBF3A" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <path d="M160,55 Q163,34 161,52" stroke="#4A9228" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <path d="M196,55 Q199,34 197,52" stroke="#5CBF3A" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <path d="M228,55 Q231,34 229,52" stroke="#4A9228" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <path d="M262,55 Q265,34 263,52" stroke="#5CBF3A" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <path d="M296,55 Q299,34 297,52" stroke="#4A9228" stroke-width="2" fill="none" stroke-linecap="round"/>
+      </svg>
+    </div>
+
+
+    <!-- Mid-right flower cluster -->
+    <div id="flowers-mid-right">
+      <svg width="105" height="65" viewBox="0 0 105 65" overflow="visible">
+        <line x1="14"  y1="65" x2="14"  y2="36" stroke="#4A9228" stroke-width="2.5" stroke-linecap="round"/>
+        <line x1="40"  y1="65" x2="38"  y2="30" stroke="#4A9228" stroke-width="2.5" stroke-linecap="round"/>
+        <line x1="66"  y1="65" x2="68"  y2="28" stroke="#4A9228" stroke-width="2.5" stroke-linecap="round"/>
+        <line x1="90"  y1="65" x2="88"  y2="34" stroke="#4A9228" stroke-width="2.5" stroke-linecap="round"/>
+        <ellipse cx="10" cy="50" rx="7" ry="3" fill="#5CBF3A" transform="rotate(-35,10,50)"/>
+        <ellipse cx="68" cy="42" rx="7" ry="3" fill="#4AA830" transform="rotate(28,68,42)"/>
+        <g transform="translate(14,30)">
+          <ellipse cx="0" cy="-8" rx="5" ry="8.5" fill="#FFB3C6" opacity=".97"/>
+          <ellipse cx="0" cy="8"  rx="5" ry="8.5" fill="#FFB3C6" opacity=".97"/>
+          <ellipse cx="-8" cy="0" rx="8.5" ry="5" fill="#FFB3C6" opacity=".97"/>
+          <ellipse cx="8"  cy="0" rx="8.5" ry="5" fill="#FFB3C6" opacity=".97"/>
+          <ellipse cx="-6" cy="-6" rx="4.5" ry="7" fill="#FFB3C6" opacity=".82" transform="rotate(-45,-6,-6)"/>
+          <ellipse cx="6"  cy="-6" rx="4.5" ry="7" fill="#FFB3C6" opacity=".82" transform="rotate(45,6,-6)"/>
+          <ellipse cx="-6" cy="6"  rx="4.5" ry="7" fill="#FFB3C6" opacity=".82" transform="rotate(45,-6,6)"/>
+          <ellipse cx="6"  cy="6"  rx="4.5" ry="7" fill="#FFB3C6" opacity=".82" transform="rotate(-45,6,6)"/>
+          <circle cx="0" cy="0" r="7.5" fill="#FFD700"/><circle cx="0" cy="0" r="4" fill="#F59E0B"/>
+        </g>
+        <g transform="translate(38,24)">
+          <ellipse cx="0" cy="-7" rx="4.5" ry="7.5" fill="#A8F0C8" opacity=".97"/>
+          <ellipse cx="0" cy="7"  rx="4.5" ry="7.5" fill="#A8F0C8" opacity=".97"/>
+          <ellipse cx="-7" cy="0" rx="7.5" ry="4.5" fill="#A8F0C8" opacity=".97"/>
+          <ellipse cx="7"  cy="0" rx="7.5" ry="4.5" fill="#A8F0C8" opacity=".97"/>
+          <ellipse cx="-5" cy="-5" rx="4" ry="6.5" fill="#A8F0C8" opacity=".82" transform="rotate(-45,-5,-5)"/>
+          <ellipse cx="5"  cy="-5" rx="4" ry="6.5" fill="#A8F0C8" opacity=".82" transform="rotate(45,5,-5)"/>
+          <ellipse cx="-5" cy="5"  rx="4" ry="6.5" fill="#A8F0C8" opacity=".82" transform="rotate(45,-5,5)"/>
+          <ellipse cx="5"  cy="5"  rx="4" ry="6.5" fill="#A8F0C8" opacity=".82" transform="rotate(-45,5,5)"/>
+          <circle cx="0" cy="0" r="7" fill="#FFD700"/><circle cx="0" cy="0" r="3.5" fill="#F59E0B"/>
+        </g>
+        <g transform="translate(68,22)">
+          <ellipse cx="0" cy="-8" rx="5" ry="8.5" fill="#DDA8FF" opacity=".97"/>
+          <ellipse cx="0" cy="8"  rx="5" ry="8.5" fill="#DDA8FF" opacity=".97"/>
+          <ellipse cx="-8" cy="0" rx="8.5" ry="5" fill="#DDA8FF" opacity=".97"/>
+          <ellipse cx="8"  cy="0" rx="8.5" ry="5" fill="#DDA8FF" opacity=".97"/>
+          <ellipse cx="-6" cy="-6" rx="4.5" ry="7" fill="#DDA8FF" opacity=".82" transform="rotate(-45,-6,-6)"/>
+          <ellipse cx="6"  cy="-6" rx="4.5" ry="7" fill="#DDA8FF" opacity=".82" transform="rotate(45,6,-6)"/>
+          <ellipse cx="-6" cy="6"  rx="4.5" ry="7" fill="#DDA8FF" opacity=".82" transform="rotate(45,-6,6)"/>
+          <ellipse cx="6"  cy="6"  rx="4.5" ry="7" fill="#DDA8FF" opacity=".82" transform="rotate(-45,6,6)"/>
+          <circle cx="0" cy="0" r="7.5" fill="#FDE68A"/><circle cx="0" cy="0" r="4" fill="#FBBF24"/>
+        </g>
+        <g transform="translate(88,28)">
+          <ellipse cx="0" cy="-7" rx="4.5" ry="7" fill="#FFA07A" opacity=".97"/>
+          <ellipse cx="0" cy="7"  rx="4.5" ry="7" fill="#FFA07A" opacity=".97"/>
+          <ellipse cx="-7" cy="0" rx="7" ry="4.5" fill="#FFA07A" opacity=".97"/>
+          <ellipse cx="7"  cy="0" rx="7" ry="4.5" fill="#FFA07A" opacity=".97"/>
+          <ellipse cx="-5" cy="-5" rx="4" ry="6" fill="#FFA07A" opacity=".82" transform="rotate(-45,-5,-5)"/>
+          <ellipse cx="5"  cy="-5" rx="4" ry="6" fill="#FFA07A" opacity=".82" transform="rotate(45,5,-5)"/>
+          <ellipse cx="-5" cy="5"  rx="4" ry="6" fill="#FFA07A" opacity=".82" transform="rotate(45,-5,5)"/>
+          <ellipse cx="5"  cy="5"  rx="4" ry="6" fill="#FFA07A" opacity=".82" transform="rotate(-45,5,5)"/>
+          <circle cx="0" cy="0" r="6.5" fill="#FDE68A"/><circle cx="0" cy="0" r="3.5" fill="#FBBF24"/>
+        </g>
+        <path d="M0,65 Q3,44 1,62"   stroke="#5CBF3A" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <path d="M27,65 Q30,42 28,62" stroke="#4A9228" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <path d="M54,65 Q57,42 55,62" stroke="#5CBF3A" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <path d="M78,65 Q81,44 79,62" stroke="#4A9228" stroke-width="2" fill="none" stroke-linecap="round"/>
+      </svg>
+    </div>
+
+    <!-- Dense left flower cluster (also hides egg-6 area) -->
+    <div id="flowers-dense-left">
+      <svg width="100" height="65" viewBox="0 0 100 65" overflow="visible">
+        <line x1="12"  y1="65" x2="12"  y2="36" stroke="#4A9228" stroke-width="2.5" stroke-linecap="round"/>
+        <line x1="36"  y1="65" x2="34"  y2="28" stroke="#4A9228" stroke-width="2.5" stroke-linecap="round"/>
+        <line x1="62"  y1="65" x2="64"  y2="26" stroke="#4A9228" stroke-width="2.5" stroke-linecap="round"/>
+        <line x1="86"  y1="65" x2="84"  y2="32" stroke="#4A9228" stroke-width="2.5" stroke-linecap="round"/>
+        <ellipse cx="8"  cy="50" rx="7" ry="3" fill="#5CBF3A" transform="rotate(-35,8,50)"/>
+        <ellipse cx="86" cy="46" rx="7" ry="3" fill="#4AA830" transform="rotate(30,86,46)"/>
+        <g transform="translate(12,30)">
+          <ellipse cx="0" cy="-8" rx="5" ry="8.5" fill="#FDE68A" opacity=".97"/>
+          <ellipse cx="0" cy="8"  rx="5" ry="8.5" fill="#FDE68A" opacity=".97"/>
+          <ellipse cx="-8" cy="0" rx="8.5" ry="5" fill="#FDE68A" opacity=".97"/>
+          <ellipse cx="8"  cy="0" rx="8.5" ry="5" fill="#FDE68A" opacity=".97"/>
+          <ellipse cx="-6" cy="-6" rx="4.5" ry="7" fill="#FDE68A" opacity=".82" transform="rotate(-45,-6,-6)"/>
+          <ellipse cx="6"  cy="-6" rx="4.5" ry="7" fill="#FDE68A" opacity=".82" transform="rotate(45,6,-6)"/>
+          <ellipse cx="-6" cy="6"  rx="4.5" ry="7" fill="#FDE68A" opacity=".82" transform="rotate(45,-6,6)"/>
+          <ellipse cx="6"  cy="6"  rx="4.5" ry="7" fill="#FDE68A" opacity=".82" transform="rotate(-45,6,6)"/>
+          <circle cx="0" cy="0" r="7.5" fill="#F59E0B"/><circle cx="0" cy="0" r="4" fill="#D97706"/>
+        </g>
+        <g transform="translate(34,22)">
+          <ellipse cx="0" cy="-9" rx="5.5" ry="9.5" fill="#93C5FD" opacity=".97"/>
+          <ellipse cx="0" cy="9"  rx="5.5" ry="9.5" fill="#93C5FD" opacity=".97"/>
+          <ellipse cx="-9" cy="0" rx="9.5" ry="5.5" fill="#93C5FD" opacity=".97"/>
+          <ellipse cx="9"  cy="0" rx="9.5" ry="5.5" fill="#93C5FD" opacity=".97"/>
+          <ellipse cx="-7" cy="-7" rx="5" ry="8"   fill="#93C5FD" opacity=".82" transform="rotate(-45,-7,-7)"/>
+          <ellipse cx="7"  cy="-7" rx="5" ry="8"   fill="#93C5FD" opacity=".82" transform="rotate(45,7,-7)"/>
+          <ellipse cx="-7" cy="7"  rx="5" ry="8"   fill="#93C5FD" opacity=".82" transform="rotate(45,-7,7)"/>
+          <ellipse cx="7"  cy="7"  rx="5" ry="8"   fill="#93C5FD" opacity=".82" transform="rotate(-45,7,7)"/>
+          <circle cx="0" cy="0" r="8" fill="#FFD700"/><circle cx="0" cy="0" r="4.5" fill="#F59E0B"/>
+        </g>
+        <g transform="translate(64,20)">
+          <ellipse cx="0" cy="-8" rx="5" ry="8.5" fill="#FFB3C6" opacity=".97"/>
+          <ellipse cx="0" cy="8"  rx="5" ry="8.5" fill="#FFB3C6" opacity=".97"/>
+          <ellipse cx="-8" cy="0" rx="8.5" ry="5" fill="#FFB3C6" opacity=".97"/>
+          <ellipse cx="8"  cy="0" rx="8.5" ry="5" fill="#FFB3C6" opacity=".97"/>
+          <ellipse cx="-6" cy="-6" rx="4.5" ry="7" fill="#FFB3C6" opacity=".82" transform="rotate(-45,-6,-6)"/>
+          <ellipse cx="6"  cy="-6" rx="4.5" ry="7" fill="#FFB3C6" opacity=".82" transform="rotate(45,6,-6)"/>
+          <ellipse cx="-6" cy="6"  rx="4.5" ry="7" fill="#FFB3C6" opacity=".82" transform="rotate(45,-6,6)"/>
+          <ellipse cx="6"  cy="6"  rx="4.5" ry="7" fill="#FFB3C6" opacity=".82" transform="rotate(-45,6,6)"/>
+          <circle cx="0" cy="0" r="7.5" fill="#FFD700"/><circle cx="0" cy="0" r="4" fill="#F59E0B"/>
+        </g>
+        <g transform="translate(84,26)">
+          <ellipse cx="0" cy="-7" rx="4.5" ry="7.5" fill="#DDA8FF" opacity=".97"/>
+          <ellipse cx="0" cy="7"  rx="4.5" ry="7.5" fill="#DDA8FF" opacity=".97"/>
+          <ellipse cx="-7" cy="0" rx="7.5" ry="4.5" fill="#DDA8FF" opacity=".97"/>
+          <ellipse cx="7"  cy="0" rx="7.5" ry="4.5" fill="#DDA8FF" opacity=".97"/>
+          <ellipse cx="-5" cy="-5" rx="4" ry="6.5" fill="#DDA8FF" opacity=".82" transform="rotate(-45,-5,-5)"/>
+          <ellipse cx="5"  cy="-5" rx="4" ry="6.5" fill="#DDA8FF" opacity=".82" transform="rotate(45,5,-5)"/>
+          <ellipse cx="-5" cy="5"  rx="4" ry="6.5" fill="#DDA8FF" opacity=".82" transform="rotate(45,-5,5)"/>
+          <ellipse cx="5"  cy="5"  rx="4" ry="6.5" fill="#DDA8FF" opacity=".82" transform="rotate(-45,5,5)"/>
+          <circle cx="0" cy="0" r="7" fill="#FDE68A"/><circle cx="0" cy="0" r="3.5" fill="#FBBF24"/>
+        </g>
+        <path d="M0,65 Q3,44 1,62"   stroke="#5CBF3A" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <path d="M24,65 Q27,42 25,62" stroke="#4A9228" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <path d="M50,65 Q53,42 51,62" stroke="#5CBF3A" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <path d="M74,65 Q77,44 75,62" stroke="#4A9228" stroke-width="2" fill="none" stroke-linecap="round"/>
+      </svg>
+    </div>
+
+    <!-- Low center ground flowers — very dense carpet -->
+    <div id="flowers-low-center">
+      <svg width="340" height="48" viewBox="0 0 340 48" overflow="visible">
+        <line x1="16"  y1="48" x2="16"  y2="26" stroke="#4A9228" stroke-width="2" stroke-linecap="round"/>
+        <line x1="50"  y1="48" x2="48"  y2="22" stroke="#4A9228" stroke-width="2" stroke-linecap="round"/>
+        <line x1="84"  y1="48" x2="86"  y2="20" stroke="#4A9228" stroke-width="2" stroke-linecap="round"/>
+        <line x1="118" y1="48" x2="116" y2="18" stroke="#4A9228" stroke-width="2" stroke-linecap="round"/>
+        <line x1="152" y1="48" x2="152" y2="22" stroke="#4A9228" stroke-width="2" stroke-linecap="round"/>
+        <line x1="188" y1="48" x2="190" y2="18" stroke="#4A9228" stroke-width="2" stroke-linecap="round"/>
+        <line x1="222" y1="48" x2="220" y2="20" stroke="#4A9228" stroke-width="2" stroke-linecap="round"/>
+        <line x1="258" y1="48" x2="256" y2="22" stroke="#4A9228" stroke-width="2" stroke-linecap="round"/>
+        <line x1="292" y1="48" x2="294" y2="24" stroke="#4A9228" stroke-width="2" stroke-linecap="round"/>
+        <line x1="324" y1="48" x2="324" y2="26" stroke="#4A9228" stroke-width="2" stroke-linecap="round"/>
+        <g transform="translate(16,20)">
+          <ellipse cx="0" cy="-6" rx="4" ry="6.5" fill="#A8F0C8" opacity=".95"/><ellipse cx="0" cy="6" rx="4" ry="6.5" fill="#A8F0C8" opacity=".95"/>
+          <ellipse cx="-6" cy="0" rx="6.5" ry="4" fill="#A8F0C8" opacity=".95"/><ellipse cx="6" cy="0" rx="6.5" ry="4" fill="#A8F0C8" opacity=".95"/>
+          <ellipse cx="-4" cy="-4" rx="3.5" ry="5.5" fill="#A8F0C8" opacity=".8" transform="rotate(-45,-4,-4)"/>
+          <ellipse cx="4"  cy="-4" rx="3.5" ry="5.5" fill="#A8F0C8" opacity=".8" transform="rotate(45,4,-4)"/>
+          <ellipse cx="-4" cy="4"  rx="3.5" ry="5.5" fill="#A8F0C8" opacity=".8" transform="rotate(45,-4,4)"/>
+          <ellipse cx="4"  cy="4"  rx="3.5" ry="5.5" fill="#A8F0C8" opacity=".8" transform="rotate(-45,4,4)"/>
+          <circle cx="0" cy="0" r="5.5" fill="#FFD700"/><circle cx="0" cy="0" r="3" fill="#F59E0B"/>
+        </g>
+        <g transform="translate(48,16)">
+          <ellipse cx="0" cy="-6" rx="4" ry="6.5" fill="#FFB3C6" opacity=".95"/><ellipse cx="0" cy="6" rx="4" ry="6.5" fill="#FFB3C6" opacity=".95"/>
+          <ellipse cx="-6" cy="0" rx="6.5" ry="4" fill="#FFB3C6" opacity=".95"/><ellipse cx="6" cy="0" rx="6.5" ry="4" fill="#FFB3C6" opacity=".95"/>
+          <ellipse cx="-4" cy="-4" rx="3.5" ry="5.5" fill="#FFB3C6" opacity=".8" transform="rotate(-45,-4,-4)"/>
+          <ellipse cx="4"  cy="-4" rx="3.5" ry="5.5" fill="#FFB3C6" opacity=".8" transform="rotate(45,4,-4)"/>
+          <ellipse cx="-4" cy="4"  rx="3.5" ry="5.5" fill="#FFB3C6" opacity=".8" transform="rotate(45,-4,4)"/>
+          <ellipse cx="4"  cy="4"  rx="3.5" ry="5.5" fill="#FFB3C6" opacity=".8" transform="rotate(-45,4,4)"/>
+          <circle cx="0" cy="0" r="5.5" fill="#FFD700"/><circle cx="0" cy="0" r="3" fill="#F59E0B"/>
+        </g>
+        <g transform="translate(86,14)">
+          <ellipse cx="0" cy="-6" rx="4" ry="6.5" fill="#DDA8FF" opacity=".95"/><ellipse cx="0" cy="6" rx="4" ry="6.5" fill="#DDA8FF" opacity=".95"/>
+          <ellipse cx="-6" cy="0" rx="6.5" ry="4" fill="#DDA8FF" opacity=".95"/><ellipse cx="6" cy="0" rx="6.5" ry="4" fill="#DDA8FF" opacity=".95"/>
+          <ellipse cx="-4" cy="-4" rx="3.5" ry="5.5" fill="#DDA8FF" opacity=".8" transform="rotate(-45,-4,-4)"/>
+          <ellipse cx="4"  cy="-4" rx="3.5" ry="5.5" fill="#DDA8FF" opacity=".8" transform="rotate(45,4,-4)"/>
+          <ellipse cx="-4" cy="4"  rx="3.5" ry="5.5" fill="#DDA8FF" opacity=".8" transform="rotate(45,-4,4)"/>
+          <ellipse cx="4"  cy="4"  rx="3.5" ry="5.5" fill="#DDA8FF" opacity=".8" transform="rotate(-45,4,4)"/>
+          <circle cx="0" cy="0" r="5.5" fill="#FDE68A"/><circle cx="0" cy="0" r="3" fill="#FBBF24"/>
+        </g>
+        <g transform="translate(116,12)">
+          <ellipse cx="0" cy="-6" rx="4" ry="6.5" fill="#FFA07A" opacity=".95"/><ellipse cx="0" cy="6" rx="4" ry="6.5" fill="#FFA07A" opacity=".95"/>
+          <ellipse cx="-6" cy="0" rx="6.5" ry="4" fill="#FFA07A" opacity=".95"/><ellipse cx="6" cy="0" rx="6.5" ry="4" fill="#FFA07A" opacity=".95"/>
+          <ellipse cx="-4" cy="-4" rx="3.5" ry="5.5" fill="#FFA07A" opacity=".8" transform="rotate(-45,-4,-4)"/>
+          <ellipse cx="4"  cy="-4" rx="3.5" ry="5.5" fill="#FFA07A" opacity=".8" transform="rotate(45,4,-4)"/>
+          <ellipse cx="-4" cy="4"  rx="3.5" ry="5.5" fill="#FFA07A" opacity=".8" transform="rotate(45,-4,4)"/>
+          <ellipse cx="4"  cy="4"  rx="3.5" ry="5.5" fill="#FFA07A" opacity=".8" transform="rotate(-45,4,4)"/>
+          <circle cx="0" cy="0" r="5.5" fill="#FDE68A"/><circle cx="0" cy="0" r="3" fill="#FBBF24"/>
+        </g>
+        <g transform="translate(152,16)">
+          <ellipse cx="0" cy="-7" rx="4.5" ry="7.5" fill="#FDE68A" opacity=".95"/><ellipse cx="0" cy="7" rx="4.5" ry="7.5" fill="#FDE68A" opacity=".95"/>
+          <ellipse cx="-7" cy="0" rx="7.5" ry="4.5" fill="#FDE68A" opacity=".95"/><ellipse cx="7" cy="0" rx="7.5" ry="4.5" fill="#FDE68A" opacity=".95"/>
+          <ellipse cx="-5" cy="-5" rx="4" ry="6.5" fill="#FDE68A" opacity=".8" transform="rotate(-45,-5,-5)"/>
+          <ellipse cx="5"  cy="-5" rx="4" ry="6.5" fill="#FDE68A" opacity=".8" transform="rotate(45,5,-5)"/>
+          <ellipse cx="-5" cy="5"  rx="4" ry="6.5" fill="#FDE68A" opacity=".8" transform="rotate(45,-5,5)"/>
+          <ellipse cx="5"  cy="5"  rx="4" ry="6.5" fill="#FDE68A" opacity=".8" transform="rotate(-45,5,5)"/>
+          <circle cx="0" cy="0" r="6.5" fill="#F59E0B"/><circle cx="0" cy="0" r="3.5" fill="#D97706"/>
+        </g>
+        <g transform="translate(190,12)">
+          <ellipse cx="0" cy="-6" rx="4" ry="6.5" fill="#93C5FD" opacity=".95"/><ellipse cx="0" cy="6" rx="4" ry="6.5" fill="#93C5FD" opacity=".95"/>
+          <ellipse cx="-6" cy="0" rx="6.5" ry="4" fill="#93C5FD" opacity=".95"/><ellipse cx="6" cy="0" rx="6.5" ry="4" fill="#93C5FD" opacity=".95"/>
+          <ellipse cx="-4" cy="-4" rx="3.5" ry="5.5" fill="#93C5FD" opacity=".8" transform="rotate(-45,-4,-4)"/>
+          <ellipse cx="4"  cy="-4" rx="3.5" ry="5.5" fill="#93C5FD" opacity=".8" transform="rotate(45,4,-4)"/>
+          <ellipse cx="-4" cy="4"  rx="3.5" ry="5.5" fill="#93C5FD" opacity=".8" transform="rotate(45,-4,4)"/>
+          <ellipse cx="4"  cy="4"  rx="3.5" ry="5.5" fill="#93C5FD" opacity=".8" transform="rotate(-45,4,4)"/>
+          <circle cx="0" cy="0" r="5.5" fill="#FFD700"/><circle cx="0" cy="0" r="3" fill="#F59E0B"/>
+        </g>
+        <g transform="translate(220,16)">
+          <ellipse cx="0" cy="-6" rx="4" ry="6.5" fill="#A8F0C8" opacity=".95"/><ellipse cx="0" cy="6" rx="4" ry="6.5" fill="#A8F0C8" opacity=".95"/>
+          <ellipse cx="-6" cy="0" rx="6.5" ry="4" fill="#A8F0C8" opacity=".95"/><ellipse cx="6" cy="0" rx="6.5" ry="4" fill="#A8F0C8" opacity=".95"/>
+          <ellipse cx="-4" cy="-4" rx="3.5" ry="5.5" fill="#A8F0C8" opacity=".8" transform="rotate(-45,-4,-4)"/>
+          <ellipse cx="4"  cy="-4" rx="3.5" ry="5.5" fill="#A8F0C8" opacity=".8" transform="rotate(45,4,-4)"/>
+          <ellipse cx="-4" cy="4"  rx="3.5" ry="5.5" fill="#A8F0C8" opacity=".8" transform="rotate(45,-4,4)"/>
+          <ellipse cx="4"  cy="4"  rx="3.5" ry="5.5" fill="#A8F0C8" opacity=".8" transform="rotate(-45,4,4)"/>
+          <circle cx="0" cy="0" r="5.5" fill="#FFD700"/><circle cx="0" cy="0" r="3" fill="#F59E0B"/>
+        </g>
+        <g transform="translate(256,18)">
+          <ellipse cx="0" cy="-6" rx="4" ry="6.5" fill="#FFB3C6" opacity=".95"/><ellipse cx="0" cy="6" rx="4" ry="6.5" fill="#FFB3C6" opacity=".95"/>
+          <ellipse cx="-6" cy="0" rx="6.5" ry="4" fill="#FFB3C6" opacity=".95"/><ellipse cx="6" cy="0" rx="6.5" ry="4" fill="#FFB3C6" opacity=".95"/>
+          <ellipse cx="-4" cy="-4" rx="3.5" ry="5.5" fill="#FFB3C6" opacity=".8" transform="rotate(-45,-4,-4)"/>
+          <ellipse cx="4"  cy="-4" rx="3.5" ry="5.5" fill="#FFB3C6" opacity=".8" transform="rotate(45,4,-4)"/>
+          <ellipse cx="-4" cy="4"  rx="3.5" ry="5.5" fill="#FFB3C6" opacity=".8" transform="rotate(45,-4,4)"/>
+          <ellipse cx="4"  cy="4"  rx="3.5" ry="5.5" fill="#FFB3C6" opacity=".8" transform="rotate(-45,4,4)"/>
+          <circle cx="0" cy="0" r="5.5" fill="#FFD700"/><circle cx="0" cy="0" r="3" fill="#F59E0B"/>
+        </g>
+        <g transform="translate(294,20)">
+          <ellipse cx="0" cy="-6" rx="4" ry="6.5" fill="#DDA8FF" opacity=".95"/><ellipse cx="0" cy="6" rx="4" ry="6.5" fill="#DDA8FF" opacity=".95"/>
+          <ellipse cx="-6" cy="0" rx="6.5" ry="4" fill="#DDA8FF" opacity=".95"/><ellipse cx="6" cy="0" rx="6.5" ry="4" fill="#DDA8FF" opacity=".95"/>
+          <ellipse cx="-4" cy="-4" rx="3.5" ry="5.5" fill="#DDA8FF" opacity=".8" transform="rotate(-45,-4,-4)"/>
+          <ellipse cx="4"  cy="-4" rx="3.5" ry="5.5" fill="#DDA8FF" opacity=".8" transform="rotate(45,4,-4)"/>
+          <ellipse cx="-4" cy="4"  rx="3.5" ry="5.5" fill="#DDA8FF" opacity=".8" transform="rotate(45,-4,4)"/>
+          <ellipse cx="4"  cy="4"  rx="3.5" ry="5.5" fill="#DDA8FF" opacity=".8" transform="rotate(-45,4,4)"/>
+          <circle cx="0" cy="0" r="5.5" fill="#FDE68A"/><circle cx="0" cy="0" r="3" fill="#FBBF24"/>
+        </g>
+        <g transform="translate(324,22)">
+          <ellipse cx="0" cy="-6" rx="4" ry="6.5" fill="#FFA07A" opacity=".95"/><ellipse cx="0" cy="6" rx="4" ry="6.5" fill="#FFA07A" opacity=".95"/>
+          <ellipse cx="-6" cy="0" rx="6.5" ry="4" fill="#FFA07A" opacity=".95"/><ellipse cx="6" cy="0" rx="6.5" ry="4" fill="#FFA07A" opacity=".95"/>
+          <ellipse cx="-4" cy="-4" rx="3.5" ry="5.5" fill="#FFA07A" opacity=".8" transform="rotate(-45,-4,-4)"/>
+          <ellipse cx="4"  cy="-4" rx="3.5" ry="5.5" fill="#FFA07A" opacity=".8" transform="rotate(45,4,-4)"/>
+          <ellipse cx="-4" cy="4"  rx="3.5" ry="5.5" fill="#FFA07A" opacity=".8" transform="rotate(45,-4,4)"/>
+          <ellipse cx="4"  cy="4"  rx="3.5" ry="5.5" fill="#FFA07A" opacity=".8" transform="rotate(-45,4,4)"/>
+          <circle cx="0" cy="0" r="5.5" fill="#FDE68A"/><circle cx="0" cy="0" r="3" fill="#FBBF24"/>
+        </g>
+        <path d="M2,48 Q4,30 2,46"    stroke="#5CBF3A" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+        <path d="M33,48 Q36,28 34,46"  stroke="#4A9228" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+        <path d="M67,48 Q70,28 68,46"  stroke="#5CBF3A" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+        <path d="M101,48 Q104,28 102,46" stroke="#4A9228" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+        <path d="M136,48 Q139,28 137,46" stroke="#5CBF3A" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+        <path d="M172,48 Q175,28 173,46" stroke="#4A9228" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+        <path d="M206,48 Q209,28 207,46" stroke="#5CBF3A" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+        <path d="M240,48 Q243,28 241,46" stroke="#4A9228" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+        <path d="M276,48 Q279,28 277,46" stroke="#5CBF3A" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+        <path d="M310,48 Q313,28 311,46" stroke="#4A9228" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+      </svg>
+    </div>
+
+    <!-- Bunny — tap to hop! -->
+<!-- EGGS -->
+    <!-- PICKABLE FLOWERS - SVG 8-petal design -->
+    <div class="flower" id="flower-1" onclick="pickEgg('flower-1')" ontouchend="onEggTouch(event,'flower-1')">
+      <svg width="72" height="72" viewBox="0 0 32 32" overflow="visible">
+        <g transform="translate(16,12)">
+          <ellipse cx="0" cy="-7" rx="4" ry="7" fill="#FFB3C6" opacity=".95"/><ellipse cx="0" cy="7" rx="4" ry="7" fill="#FFB3C6" opacity=".95"/>
+          <ellipse cx="-7" cy="0" rx="7" ry="4" fill="#FFB3C6" opacity=".95"/><ellipse cx="7" cy="0" rx="7" ry="4" fill="#FFB3C6" opacity=".95"/>
+          <ellipse cx="-5" cy="-5" rx="3.5" ry="6" fill="#FFB3C6" opacity=".8" transform="rotate(-45,-5,-5)"/>
+          <ellipse cx="5" cy="-5" rx="3.5" ry="6" fill="#FFB3C6" opacity=".8" transform="rotate(45,5,-5)"/>
+          <ellipse cx="-5" cy="5" rx="3.5" ry="6" fill="#FFB3C6" opacity=".8" transform="rotate(45,-5,5)"/>
+          <ellipse cx="5" cy="5" rx="3.5" ry="6" fill="#FFB3C6" opacity=".8" transform="rotate(-45,5,5)"/>
+          <circle cx="0" cy="0" r="6" fill="#FFD700"/><circle cx="0" cy="0" r="3" fill="#F59E0B"/>
+        </g>
+        <path d="M16,24 Q17,16 16,23" stroke="#4A9228" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div class="flower" id="flower-2" onclick="pickEgg('flower-2')" ontouchend="onEggTouch(event,'flower-2')">
+      <svg width="72" height="72" viewBox="0 0 32 32" overflow="visible">
+        <g transform="translate(16,12)">
+          <ellipse cx="0" cy="-7" rx="4.5" ry="7.5" fill="#93C5FD" opacity=".95"/><ellipse cx="0" cy="7" rx="4.5" ry="7.5" fill="#93C5FD" opacity=".95"/>
+          <ellipse cx="-7.5" cy="0" rx="7.5" ry="4.5" fill="#93C5FD" opacity=".95"/><ellipse cx="7.5" cy="0" rx="7.5" ry="4.5" fill="#93C5FD" opacity=".95"/>
+          <ellipse cx="-5" cy="-5" rx="4" ry="6.5" fill="#93C5FD" opacity=".8" transform="rotate(-45,-5,-5)"/>
+          <ellipse cx="5" cy="-5" rx="4" ry="6.5" fill="#93C5FD" opacity=".8" transform="rotate(45,5,-5)"/>
+          <ellipse cx="-5" cy="5" rx="4" ry="6.5" fill="#93C5FD" opacity=".8" transform="rotate(45,-5,5)"/>
+          <ellipse cx="5" cy="5" rx="4" ry="6.5" fill="#93C5FD" opacity=".8" transform="rotate(-45,5,5)"/>
+          <circle cx="0" cy="0" r="6.5" fill="#FFD700"/><circle cx="0" cy="0" r="3.5" fill="#F59E0B"/>
+        </g>
+        <path d="M16,24 Q17,15 16,23" stroke="#4A9228" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div class="flower" id="flower-3" onclick="pickEgg('flower-3')" ontouchend="onEggTouch(event,'flower-3')">
+      <svg width="72" height="72" viewBox="0 0 32 32" overflow="visible">
+        <g transform="translate(16,12)">
+          <ellipse cx="0" cy="-7" rx="4" ry="7" fill="#FDE68A" opacity=".95"/><ellipse cx="0" cy="7" rx="4" ry="7" fill="#FDE68A" opacity=".95"/>
+          <ellipse cx="-7" cy="0" rx="7" ry="4" fill="#FDE68A" opacity=".95"/><ellipse cx="7" cy="0" rx="7" ry="4" fill="#FDE68A" opacity=".95"/>
+          <ellipse cx="-5" cy="-5" rx="3.5" ry="6" fill="#FDE68A" opacity=".8" transform="rotate(-45,-5,-5)"/>
+          <ellipse cx="5" cy="-5" rx="3.5" ry="6" fill="#FDE68A" opacity=".8" transform="rotate(45,5,-5)"/>
+          <ellipse cx="-5" cy="5" rx="3.5" ry="6" fill="#FDE68A" opacity=".8" transform="rotate(45,-5,5)"/>
+          <ellipse cx="5" cy="5" rx="3.5" ry="6" fill="#FDE68A" opacity=".8" transform="rotate(-45,5,5)"/>
+          <circle cx="0" cy="0" r="6" fill="#F59E0B"/><circle cx="0" cy="0" r="3" fill="#D97706"/>
+        </g>
+        <path d="M16,24 Q17,16 16,23" stroke="#4A9228" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div class="flower" id="flower-4" onclick="pickEgg('flower-4')" ontouchend="onEggTouch(event,'flower-4')">
+      <svg width="72" height="72" viewBox="0 0 32 32" overflow="visible">
+        <g transform="translate(16,12)">
+          <ellipse cx="0" cy="-6.5" rx="3.5" ry="6.5" fill="#DDA8FF" opacity=".95"/><ellipse cx="0" cy="6.5" rx="3.5" ry="6.5" fill="#DDA8FF" opacity=".95"/>
+          <ellipse cx="-6.5" cy="0" rx="6.5" ry="3.5" fill="#DDA8FF" opacity=".95"/><ellipse cx="6.5" cy="0" rx="6.5" ry="3.5" fill="#DDA8FF" opacity=".95"/>
+          <ellipse cx="-4.5" cy="-4.5" rx="3" ry="5.5" fill="#DDA8FF" opacity=".8" transform="rotate(-45,-4.5,-4.5)"/>
+          <ellipse cx="4.5" cy="-4.5" rx="3" ry="5.5" fill="#DDA8FF" opacity=".8" transform="rotate(45,4.5,-4.5)"/>
+          <ellipse cx="-4.5" cy="4.5" rx="3" ry="5.5" fill="#DDA8FF" opacity=".8" transform="rotate(45,-4.5,4.5)"/>
+          <ellipse cx="4.5" cy="4.5" rx="3" ry="5.5" fill="#DDA8FF" opacity=".8" transform="rotate(-45,4.5,4.5)"/>
+          <circle cx="0" cy="0" r="5.5" fill="#FDE68A"/><circle cx="0" cy="0" r="2.8" fill="#FBBF24"/>
+        </g>
+        <path d="M16,24 Q17,16 16,23" stroke="#4A9228" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div class="flower" id="flower-5" onclick="pickEgg('flower-5')" ontouchend="onEggTouch(event,'flower-5')">
+      <svg width="72" height="72" viewBox="0 0 32 32" overflow="visible">
+        <g transform="translate(16,12)">
+          <ellipse cx="0" cy="-7" rx="4" ry="7" fill="#A8F0C8" opacity=".95"/><ellipse cx="0" cy="7" rx="4" ry="7" fill="#A8F0C8" opacity=".95"/>
+          <ellipse cx="-7" cy="0" rx="7" ry="4" fill="#A8F0C8" opacity=".95"/><ellipse cx="7" cy="0" rx="7" ry="4" fill="#A8F0C8" opacity=".95"/>
+          <ellipse cx="-5" cy="-5" rx="3.5" ry="6" fill="#A8F0C8" opacity=".8" transform="rotate(-45,-5,-5)"/>
+          <ellipse cx="5" cy="-5" rx="3.5" ry="6" fill="#A8F0C8" opacity=".8" transform="rotate(45,5,-5)"/>
+          <ellipse cx="-5" cy="5" rx="3.5" ry="6" fill="#A8F0C8" opacity=".8" transform="rotate(45,-5,5)"/>
+          <ellipse cx="5" cy="5" rx="3.5" ry="6" fill="#A8F0C8" opacity=".8" transform="rotate(-45,5,5)"/>
+          <circle cx="0" cy="0" r="6" fill="#FFD700"/><circle cx="0" cy="0" r="3" fill="#F59E0B"/>
+        </g>
+        <path d="M16,24 Q17,16 16,23" stroke="#4A9228" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div class="flower" id="flower-6" onclick="pickEgg('flower-6')" ontouchend="onEggTouch(event,'flower-6')">
+      <svg width="72" height="72" viewBox="0 0 32 32" overflow="visible">
+        <g transform="translate(16,12)">
+          <ellipse cx="0" cy="-7" rx="4" ry="7" fill="#FFA07A" opacity=".95"/><ellipse cx="0" cy="7" rx="4" ry="7" fill="#FFA07A" opacity=".95"/>
+          <ellipse cx="-7" cy="0" rx="7" ry="4" fill="#FFA07A" opacity=".95"/><ellipse cx="7" cy="0" rx="7" ry="4" fill="#FFA07A" opacity=".95"/>
+          <ellipse cx="-5" cy="-5" rx="3.5" ry="6" fill="#FFA07A" opacity=".8" transform="rotate(-45,-5,-5)"/>
+          <ellipse cx="5" cy="-5" rx="3.5" ry="6" fill="#FFA07A" opacity=".8" transform="rotate(45,5,-5)"/>
+          <ellipse cx="-5" cy="5" rx="3.5" ry="6" fill="#FFA07A" opacity=".8" transform="rotate(45,-5,5)"/>
+          <ellipse cx="5" cy="5" rx="3.5" ry="6" fill="#FFA07A" opacity=".8" transform="rotate(-45,5,5)"/>
+          <circle cx="0" cy="0" r="6" fill="#FDE68A"/><circle cx="0" cy="0" r="3" fill="#FBBF24"/>
+        </g>
+        <path d="M16,24 Q17,16 16,23" stroke="#4A9228" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+      </svg>
+    </div>
+
+    <!-- Flower cover over flower-6 (z-index 12) -->
+    <div class="flowers-cover-6"></div>
+
+    <!-- Grass tuft that hides bottom of flower-4 (z-index 12) -->
+    <div class="grass-cover-4"></div>
+
+    <!-- POTTED PLANT COLLECTION AREA -->
+    <div id="pot-wrapper">
+      <div id="pot">
+        <div id="pot-flowers"></div>
+      </div>
+      <div id="pot-count"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- PRIZE MODAL -->
+<div id="prize-overlay" class="hidden">
+  <div id="confetti-container"></div>
+  <div id="prize-card">
+    <div class="prize-tag" id="prize-tag-text">🏆 CONGRATULATIONS — YOU WON! 🏆</div>
+    <div class="prize-jackpot" id="prize-event-name">West Coast Superstar Retreat</div>
+    <div class="prize-title" id="prize-ticket-line">$300 Ticket — Included</div>
+    <div class="prize-price">$300 Value</div>
+    <div class="prize-original" id="prize-bonus-line">+ Backstage VIP Tour of the Event</div>
+    <div class="prize-urgency">⚡ Offer expires Monday, May 11th at 8am — claim now!</div>
+    <div class="prize-body" id="prize-body-text">You picked every flower and won a real prize! Tap below to claim your spot before it expires.</div>
+    <a id="claim-btn" href="#" target="_blank" rel="noopener noreferrer" onclick="markPlayed();">
+      CLAIM YOUR PRIZE →
+    </a>
+    <div class="prize-fine-print">
+      One prize per person &nbsp;·&nbsp; Offer expires May 11th at 8am<br>
+      Presented by the Mike Ferry Organization
+    </div>
+  </div>
+</div>
+
+<script>
+  /* ====================================================  LOCK CHECK  ==================================================== */
+  /* Auto-locks May 11, 2026 at 8:00am Pacific Daylight Time (UTC-7 = 15:00 UTC) */
+  const LOCK_AT = new Date('2026-05-11T15:00:00Z');
+  if (new Date() >= LOCK_AT) {
+    document.getElementById('game-locked').classList.remove('hidden');
+    document.getElementById('game-wrapper').style.display = 'none';
+  }
+
+  /* ====================================================  STATE  ==================================================== */
+  const pickedEggs = new Set();
+  let gameWon = false, audioCtx = null;
+
+  /* Pre-warm audio context on very first user interaction so first tap always sounds */
+  function initAudio() {
+    if (audioCtx) return;
+    try {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+    } catch(e) {}
+    document.removeEventListener('touchstart', initAudio);
+    document.removeEventListener('mousedown', initAudio);
+  }
+  document.addEventListener('touchstart', initAudio, { once: true });
+  document.addEventListener('mousedown', initAudio, { once: true });
+
+  /* ====================================================  AUDIO  ==================================================== */
+  function ctx() {
+    if (!audioCtx) { try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) { return null; } }
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    return audioCtx;
+  }
+  function playBoing() {
+    const c = ctx(); if (!c) return;
+    try {
+      const osc = c.createOscillator(), g = c.createGain();
+      osc.connect(g); g.connect(c.destination); osc.type = 'sine';
+      const t = c.currentTime;
+      osc.frequency.setValueAtTime(320, t);
+      osc.frequency.exponentialRampToValueAtTime(680, t + 0.07);
+      osc.frequency.exponentialRampToValueAtTime(240, t + 0.28);
+      g.gain.setValueAtTime(0.22, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
+      osc.start(t); osc.stop(t + 0.35);
+    } catch(e) {}
+  }
+  function playTap(n) {
+    const c = ctx(); if (!c) return;
+    try {
+      const osc = c.createOscillator(), g = c.createGain();
+      osc.connect(g); g.connect(c.destination); osc.type = 'sine';
+      const t = c.currentTime;
+      osc.frequency.value = 360 + n * 32;
+      g.gain.setValueAtTime(0.10, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.13);
+      osc.start(t); osc.stop(t + 0.13);
+    } catch(e) {}
+  }
+  function playSuccess() {
+    const c = ctx(); if (!c) return;
+    try {
+      [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => {
+        const osc = c.createOscillator(), g = c.createGain();
+        osc.connect(g); g.connect(c.destination); osc.type = 'sine';
+        osc.frequency.value = freq;
+        const t = c.currentTime + i * 0.13;
+        g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.28, t + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.001, t + 0.45);
+        osc.start(t); osc.stop(t + 0.5);
+      });
+    } catch(e) {}
+  }
+
+  /* ====================================================  EGG COLLECTION  ==================================================== */
+  function onEggTouch(e, id) { e.preventDefault(); pickEgg(id); }
+
+  function pickEgg(id) {
+    if (gameWon || pickedEggs.has(id)) return;
+    pickedEggs.add(id);
+    playBoing();
+
+    const flower = document.getElementById(id);
+    const potWrapper = document.getElementById('pot-wrapper');
+    const fRect = flower.getBoundingClientRect();
+    const pwRect = potWrapper.getBoundingClientRect();
+
+    const ghost = document.createElement('div');
+    ghost.style.cssText = `
+      position:fixed; width:${fRect.width}px; height:${fRect.height}px;
+      left:${fRect.left}px; top:${fRect.top}px;
+      z-index:500; pointer-events:none;
+      transition:left .58s cubic-bezier(.25,.46,.45,.94), top .58s cubic-bezier(.25,.46,.45,.94),
+                 width .58s ease, height .58s ease, opacity .35s ease .15s, transform .58s ease;
+    `;
+    ghost.innerHTML = flower.innerHTML;
+    document.body.appendChild(ghost);
+    flower.style.opacity = '0'; flower.style.pointerEvents = 'none'; flower.style.cursor = 'default';
+
+    // Animate down into pot (planting effect)
+    const destLeft = pwRect.left + pwRect.width / 2 - fRect.width / 2;
+    const destTop  = pwRect.top  + pwRect.height * 0.7;
+    requestAnimationFrame(() => { requestAnimationFrame(() => {
+      ghost.style.left = destLeft + 'px'; ghost.style.top = destTop + 'px';
+      ghost.style.width = (fRect.width * 0.35) + 'px'; ghost.style.height = (fRect.height * 0.35) + 'px';
+      ghost.style.opacity = '0'; ghost.style.transform = 'rotateX(75deg) rotateZ(360deg) scaleY(0.5)';
+    }); });
+
+    setTimeout(() => {
+      ghost.remove();
+      addFlowerToPot();
+      updatePotCount();
+      if (pickedEggs.size === 6) setTimeout(triggerWin, 380);
+    }, 640);
+  }
+
+  function addFlowerToPot() {
+    const potFlowers = document.getElementById('pot-flowers');
+    const petals = [
+      { fill: '#FFB3C6', center1: '#FFD700', center2: '#F59E0B' },
+      { fill: '#93C5FD', center1: '#FFD700', center2: '#F59E0B' },
+      { fill: '#FDE68A', center1: '#F59E0B', center2: '#D97706' },
+      { fill: '#DDA8FF', center1: '#FDE68A', center2: '#FBBF24' },
+      { fill: '#A8F0C8', center1: '#FFD700', center2: '#F59E0B' },
+      { fill: '#FFA07A', center1: '#FDE68A', center2: '#FBBF24' }
+    ];
+    const petal = petals[pickedEggs.size - 1] || petals[0];
+    const flowerDiv = document.createElement('div');
+    flowerDiv.className = 'pot-flower';
+
+    // Bouquet layout — stagger heights so it looks like a real arrangement
+    const flowerIndex = pickedEggs.size - 1;
+    const spacing = 17;
+    const totalWidth = spacing * 5;
+    const startX = 70 - (totalWidth / 2) - 22; // center within 140px basket body
+    const x = startX + (flowerIndex * spacing);
+
+    // Alternating tall/short heights for a natural bouquet arc
+    const yOffsets = [5, -14, -6, -18, -2, -10];
+    const y = 8 + (yOffsets[flowerIndex] || 0);
+
+    // Stem bottom stays anchored to basket regardless of flower height
+    const stemTop = 22;
+    const stemBottom = 80 - (yOffsets[flowerIndex] || 0);
+
+    // Leaf positions scaled to stem length
+    const leaf1Y = stemTop + (stemBottom - stemTop) * 0.38;
+    const leaf2Y = stemTop + (stemBottom - stemTop) * 0.62;
+
+    flowerDiv.style.left = x + 'px';
+    flowerDiv.style.top = y + 'px';
+    flowerDiv.style.display = 'block';
+    flowerDiv.style.zIndex = '10';
+
+    flowerDiv.innerHTML = `
+      <svg width="50" height="100" viewBox="0 0 50 100" overflow="visible">
+        <!-- Green stem -->
+        <path d="M 25 ${stemTop} Q 24 ${stemTop + (stemBottom-stemTop)*0.5}, 25 ${stemBottom}" stroke="#22C55E" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        <!-- Leaves -->
+        <ellipse cx="19" cy="${leaf1Y}" rx="3" ry="7" fill="#16A34A" opacity="0.85" transform="rotate(-38, 19, ${leaf1Y})"/>
+        <ellipse cx="31" cy="${leaf2Y}" rx="3" ry="7" fill="#16A34A" opacity="0.85" transform="rotate(38, 31, ${leaf2Y})"/>
+        <!-- Flower head — bigger petals -->
+        <g transform="translate(25, 12)">
+          <ellipse cx="0" cy="-8" rx="5" ry="8.5" fill="${petal.fill}" opacity=".95"/>
+          <ellipse cx="0" cy="8"  rx="5" ry="8.5" fill="${petal.fill}" opacity=".95"/>
+          <ellipse cx="-8" cy="0" rx="8.5" ry="5" fill="${petal.fill}" opacity=".95"/>
+          <ellipse cx="8"  cy="0" rx="8.5" ry="5" fill="${petal.fill}" opacity=".95"/>
+          <ellipse cx="-6" cy="-6" rx="4" ry="7" fill="${petal.fill}" opacity=".82" transform="rotate(-45,-6,-6)"/>
+          <ellipse cx="6"  cy="-6" rx="4" ry="7" fill="${petal.fill}" opacity=".82" transform="rotate(45,6,-6)"/>
+          <ellipse cx="-6" cy="6"  rx="4" ry="7" fill="${petal.fill}" opacity=".82" transform="rotate(45,-6,6)"/>
+          <ellipse cx="6"  cy="6"  rx="4" ry="7" fill="${petal.fill}" opacity=".82" transform="rotate(-45,6,6)"/>
+          <circle cx="0" cy="0" r="6.5" fill="${petal.center1}"/><circle cx="0" cy="0" r="3.5" fill="${petal.center2}"/>
+        </g>
+      </svg>
+    `;
+    potFlowers.appendChild(flowerDiv);
+  }
+
+  function updatePotCount() {
+    const n = pickedEggs.size;
+    const el = document.getElementById('pot-count');
+    const ins = document.getElementById('game-instructions');
+    el.textContent = n + '/6 flowers'; el.classList.add('show');
+    if (n === 1) ins.textContent = '🌸 1/6 picked — keep going!';
+    if (n === 2) ins.textContent = '🌸🌸 2/6 picked — great job!';
+    if (n === 3) ins.textContent = '🌸🌸🌸 3/6 picked — halfway there!';
+    if (n === 4) ins.textContent = '🌸🌸🌸🌸 4/6 picked — almost done!';
+    if (n === 5) ins.textContent = '🌸🌸🌸🌸🌸 5/6 picked — one more!';
+  }
+
+  /* ====================================================  WIN  ==================================================== */
+  function triggerWin() {
+    if (gameWon) return; gameWon = true; markPlayed();
+
+    // 50/50 prize draw
+    const wonRetreat = Math.random() < 0.5;
+
+    if (wonRetreat) {
+      // Prize A: West Coast Superstar Retreat + Backstage VIP Tour
+      document.getElementById('prize-event-name').textContent  = 'West Coast Superstar Retreat';
+      document.getElementById('prize-ticket-line').textContent = '$300 Ticket — Included';
+      document.getElementById('prize-bonus-line').textContent  = '+ Backstage VIP Tour of the Event';
+      document.getElementById('prize-body-text').textContent   = 'You picked every flower and won a $300 ticket to the West Coast Superstar Retreat — plus an exclusive Backstage VIP Tour of the event. Tap below to claim before it expires!';
+      document.getElementById('claim-btn').textContent         = 'CLAIM YOUR VIP RETREAT PRIZE →';
+      document.getElementById('claim-btn').href                = 'https://mikeferry-45810950.hs-sites.com/hs/payments/2jjcdndcd?referrer=PAYMENT_LINK';
+    } else {
+      // Prize B: West Coast Superstar Review + Virtual Prospecting Clinic
+      document.getElementById('prize-event-name').textContent  = 'West Coast Superstar Review';
+      document.getElementById('prize-ticket-line').textContent = '$300 Ticket — Included';
+      document.getElementById('prize-bonus-line').textContent  = '+ Virtual Prospecting Clinic Ticket';
+      document.getElementById('prize-body-text').textContent   = 'You picked every flower and won a $300 ticket to the West Coast Superstar Review — plus a ticket to an exclusive Virtual Prospecting Clinic. Tap below to claim before it expires!';
+      document.getElementById('claim-btn').textContent         = 'CLAIM YOUR SUPERSTAR REVIEW PRIZE →';
+      document.getElementById('claim-btn').href                = 'https://mikeferry-45810950.hs-sites.com/hs/payments/dSTdqXpf?referrer=PAYMENT_LINK';
+    }
+
+    const pw = document.getElementById('pot-wrapper');
+    pw.classList.add('pot-celebration'); setTimeout(() => pw.classList.remove('pot-celebration'), 1000);
+    document.getElementById('game-instructions').textContent = '🎉 You won! Claim your prize below!';
+    setTimeout(playSuccess, 480);
+    setTimeout(() => { document.getElementById('prize-overlay').classList.remove('hidden'); spawnConfetti(); }, 980);
+  }
+
+  function markPlayed() { sessionStorage.setItem('mfoEggHuntPlayed', '1'); }
+
+  /* ====================================================  RESPONSIVE SCALE  ==================================================== */
+  /* Scales the fixed 480×853 canvas to fill any screen while keeping 9:16 */
+  function fitScene() {
+    const scene = document.getElementById('scene');
+    const scaleX = window.innerWidth  / 480;
+    const scaleY = window.innerHeight / 853;
+    const scale  = Math.min(scaleX, scaleY);
+    scene.style.transform = `scale(${scale})`;
+  }
+  window.addEventListener('resize', fitScene);
+  fitScene(); /* run immediately on load */
+
+  /* ====================================================  CONFETTI  ==================================================== */
+  const CONFETTI_COLORS = ['#FF6B9D','#FFE66D','#A78BFA','#34D399','#60A5FA','#F87171','#FBBF24','#10B981','#FF9F43','#EE5A24','#D980FA','#0ABDE3','#FFC312','#C4E538','#FDA7DF','#9980FA'];
+
+  function spawnConfetti() {
+    const container = document.getElementById('confetti-container');
+    container.innerHTML = '';
+    for (let i = 0; i < 80; i++) {
+      const p = document.createElement('div');
+      const size = 5 + Math.random() * 9, circle = Math.random() > 0.45;
+      p.className = 'confetti-piece';
+      p.style.cssText = `left:${Math.random()*100}%;width:${circle?size:size*.55}px;height:${size}px;background:${CONFETTI_COLORS[Math.floor(Math.random()*CONFETTI_COLORS.length)]};border-radius:${circle?'50%':'2px'};animation-delay:${Math.random()*.9}s;animation-duration:${1.6+Math.random()*1.6}s;transform:rotate(${Math.random()*360}deg);`;
+      container.appendChild(p);
+    }
+  }
+</script>
+</body>
+</html>
